@@ -1,11 +1,11 @@
 # SpotLan
 
-Phone-க்கு network discovery app — புது place-ல Wi‑Fi SSID, hosts, servers, open ports.
+Phone LAN scanner — website-feel UI, motion text, open-port discovery.
 
 ```bash
 cd SpotLan
 npm install
-npx expo start
+npm run phone
 ```
 
-Details: [SpotLan/README.md](./SpotLan/README.md)
+Phone install: [SpotLan/INSTALL.md](./SpotLan/INSTALL.md)

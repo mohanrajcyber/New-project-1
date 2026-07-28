@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInRight } from 'react-native-reanimated';
 import { colors, space } from '../theme';
 import type { DiscoveredHost } from '../types';
 
@@ -9,61 +10,48 @@ type Props = {
 };
 
 export function DeviceRow({ host, index }: Props) {
-  const enter = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.timing(enter, {
-      toValue: 1,
-      duration: 420,
-      delay: Math.min(index * 70, 420),
-      useNativeDriver: true,
-    }).start();
-  }, [enter, index]);
-
   return (
     <Animated.View
-      style={[
-        styles.wrap,
-        {
-          opacity: enter,
-          transform: [
-            {
-              translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }),
-            },
-          ],
-        },
-      ]}
+      entering={FadeInRight.delay(Math.min(index * 80, 480))
+        .duration(520)
+        .springify()
+        .damping(18)}
+      style={styles.wrap}
     >
-      <View style={styles.top}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.name} numberOfLines={1}>
-            {host.hostname}
-          </Text>
-          <Text style={styles.ip}>{host.ip}</Text>
+      <View style={styles.accentBar} />
+      <View style={styles.body}>
+        <View style={styles.top}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.name} numberOfLines={1}>
+              {host.hostname}
+            </Text>
+            <Text style={styles.ip}>{host.ip}</Text>
+          </View>
+          {host.isGateway ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>Gateway</Text>
+            </View>
+          ) : (
+            <View style={[styles.badge, styles.badgeLive]}>
+              <View style={styles.liveDot} />
+              <Text style={[styles.badgeText, styles.badgeLiveText]}>Live</Text>
+            </View>
+          )}
         </View>
-        {host.isGateway ? (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>Gateway</Text>
-          </View>
-        ) : (
-          <View style={[styles.badge, styles.badgeLive]}>
-            <Text style={[styles.badgeText, styles.badgeLiveText]}>Live</Text>
-          </View>
-        )}
-      </View>
 
-      <View style={styles.ports}>
-        {host.openPorts.map((port) => (
-          <Pressable key={`${host.ip}-${port.port}`} style={styles.portChip}>
-            <Text style={styles.portNum}>{port.port}</Text>
-            <Text style={styles.portSvc}>{port.service}</Text>
-            {port.banner ? (
-              <Text style={styles.portBanner} numberOfLines={1}>
-                {port.banner}
-              </Text>
-            ) : null}
-          </Pressable>
-        ))}
+        <View style={styles.ports}>
+          {host.openPorts.map((port) => (
+            <Pressable key={`${host.ip}-${port.port}`} style={styles.portChip}>
+              <Text style={styles.portNum}>{port.port}</Text>
+              <Text style={styles.portSvc}>{port.service}</Text>
+              {port.banner ? (
+                <Text style={styles.portBanner} numberOfLines={1}>
+                  {port.banner}
+                </Text>
+              ) : null}
+            </Pressable>
+          ))}
+        </View>
       </View>
     </Animated.View>
   );
@@ -72,11 +60,20 @@ export function DeviceRow({ host, index }: Props) {
 const styles = StyleSheet.create({
   wrap: {
     backgroundColor: colors.surfaceSolid,
-    borderRadius: 18,
-    padding: space.md,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: colors.line,
     marginBottom: space.sm,
+    overflow: 'hidden',
+    flexDirection: 'row',
+  },
+  accentBar: {
+    width: 4,
+    backgroundColor: colors.accent,
+  },
+  body: {
+    flex: 1,
+    padding: space.md,
   },
   top: {
     flexDirection: 'row',
@@ -85,12 +82,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   name: {
-    fontFamily: 'DMSans_700Bold',
-    fontSize: 17,
+    fontFamily: 'Syne_700Bold',
+    fontSize: 18,
     color: colors.ink,
+    letterSpacing: -0.3,
   },
   ip: {
-    marginTop: 2,
+    marginTop: 3,
     fontFamily: 'IBMPlexMono_400Regular',
     fontSize: 13,
     color: colors.inkMuted,
@@ -98,14 +96,23 @@ const styles = StyleSheet.create({
   badge: {
     backgroundColor: colors.accentSoft,
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
+    paddingVertical: 6,
+    borderRadius: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   badgeLive: {
-    backgroundColor: '#E5F6EC',
+    backgroundColor: '#E4F6EB',
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 4,
+    backgroundColor: colors.live,
   },
   badgeText: {
-    fontFamily: 'DMSans_500Medium',
+    fontFamily: 'SpaceGrotesk_500Medium',
     fontSize: 12,
     color: colors.accentDeep,
   },
@@ -119,9 +126,9 @@ const styles = StyleSheet.create({
   },
   portChip: {
     backgroundColor: colors.portBg,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    borderRadius: 12,
+    paddingHorizontal: 11,
+    paddingVertical: 9,
     maxWidth: '100%',
   },
   portNum: {
@@ -130,7 +137,7 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   portSvc: {
-    fontFamily: 'DMSans_400Regular',
+    fontFamily: 'SpaceGrotesk_400Regular',
     fontSize: 12,
     color: colors.inkMuted,
     marginTop: 1,

@@ -1,5 +1,13 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
+import Animated, {
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { colors } from '../theme';
 
 type Props = {
@@ -7,77 +15,66 @@ type Props = {
   size?: number;
 };
 
-export function ScanRadar({ active, size = 120 }: Props) {
-  const pulse = useRef(new Animated.Value(0)).current;
-  const sweep = useRef(new Animated.Value(0)).current;
+export function ScanRadar({ active, size = 148 }: Props) {
+  const pulse = useSharedValue(0);
+  const sweep = useSharedValue(0);
+  const idle = useSharedValue(0);
+
+  useEffect(() => {
+    idle.value = withRepeat(
+      withTiming(1, { duration: 3200, easing: Easing.inOut(Easing.sin) }),
+      -1,
+      true,
+    );
+  }, [idle]);
 
   useEffect(() => {
     if (!active) {
-      pulse.setValue(0);
-      sweep.setValue(0);
+      pulse.value = withTiming(0, { duration: 300 });
       return;
     }
-
-    const pulseLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, {
-          toValue: 1,
-          duration: 1600,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulse, { toValue: 0, duration: 0, useNativeDriver: true }),
-      ]),
+    pulse.value = withRepeat(
+      withTiming(1, { duration: 1500, easing: Easing.out(Easing.quad) }),
+      -1,
+      false,
     );
-
-    const sweepLoop = Animated.loop(
-      Animated.timing(sweep, {
-        toValue: 1,
-        duration: 2200,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      }),
+    sweep.value = withRepeat(
+      withTiming(1, { duration: 2400, easing: Easing.linear }),
+      -1,
+      false,
     );
-
-    pulseLoop.start();
-    sweepLoop.start();
-    return () => {
-      pulseLoop.stop();
-      sweepLoop.stop();
-    };
   }, [active, pulse, sweep]);
 
-  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1.15] });
-  const opacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0] });
-  const rotate = sweep.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  const pulseStyle = useAnimatedStyle(() => ({
+    opacity: active ? interpolate(pulse.value, [0, 1], [0.5, 0]) : 0.12,
+    transform: [{ scale: interpolate(pulse.value, [0, 1], [0.45, 1.2]) }],
+  }));
+
+  const sweepStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${sweep.value * 360}deg` }],
+    opacity: active ? 1 : 0,
+  }));
+
+  const coreStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + idle.value * 0.08 }],
+  }));
 
   return (
     <View style={[styles.wrap, { width: size, height: size }]}>
-      <View style={[styles.ring, { width: size * 0.92, height: size * 0.92, borderRadius: size }]} />
-      <View style={[styles.ring, { width: size * 0.64, height: size * 0.64, borderRadius: size }]} />
+      <View style={[styles.ring, { width: size * 0.95, height: size * 0.95, borderRadius: size }]} />
+      <View style={[styles.ring, { width: size * 0.7, height: size * 0.7, borderRadius: size }]} />
+      <View style={[styles.ringSoft, { width: size * 0.42, height: size * 0.42, borderRadius: size }]} />
       <Animated.View
         style={[
           styles.pulse,
-          {
-            width: size,
-            height: size,
-            borderRadius: size,
-            opacity,
-            transform: [{ scale }],
-          },
+          { width: size, height: size, borderRadius: size },
+          pulseStyle,
         ]}
       />
-      {active ? (
-        <Animated.View
-          style={[
-            styles.sweepBox,
-            { width: size, height: size, transform: [{ rotate }] },
-          ]}
-        >
-          <View style={[styles.sweepArm, { width: size / 2, height: 2 }]} />
-        </Animated.View>
-      ) : null}
-      <View style={styles.core} />
+      <Animated.View style={[styles.sweepBox, { width: size, height: size }, sweepStyle]}>
+        <View style={[styles.sweepArm, { width: size * 0.48 }]} />
+      </Animated.View>
+      <Animated.View style={[styles.core, coreStyle]} />
     </View>
   );
 }
@@ -89,12 +86,16 @@ const styles = StyleSheet.create({
   },
   ring: {
     position: 'absolute',
-    borderWidth: 1,
-    borderColor: 'rgba(15,122,110,0.22)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(12,110,99,0.2)',
+  },
+  ringSoft: {
+    position: 'absolute',
+    backgroundColor: 'rgba(12,110,99,0.08)',
   },
   pulse: {
     position: 'absolute',
-    backgroundColor: 'rgba(15,122,110,0.16)',
+    backgroundColor: 'rgba(12,110,99,0.2)',
   },
   sweepBox: {
     position: 'absolute',
@@ -104,13 +105,14 @@ const styles = StyleSheet.create({
   sweepArm: {
     position: 'absolute',
     left: '50%',
-    backgroundColor: 'rgba(15,122,110,0.35)',
+    height: 2,
+    backgroundColor: 'rgba(12,110,99,0.45)',
     borderRadius: 2,
   },
   core: {
-    width: 14,
-    height: 14,
-    borderRadius: 8,
+    width: 16,
+    height: 16,
+    borderRadius: 10,
     backgroundColor: colors.accent,
   },
 });

@@ -1,7 +1,9 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { colors, space } from '../theme';
 import type { ScanProgress } from '../types';
+import { FadeIn, TypeLine } from './motion';
 
 type Props = {
   scanning: boolean;
@@ -15,75 +17,102 @@ export function ScanControls({ scanning, progress, disabled, onScan, onStop }: P
   const percent =
     progress && progress.total > 0 ? Math.round((progress.checked / progress.total) * 100) : 0;
 
-  return (
-    <View style={styles.wrap}>
-      <Pressable
-        accessibilityRole="button"
-        onPress={scanning ? onStop : onScan}
-        disabled={!scanning && disabled}
-        style={({ pressed }) => [
-          styles.button,
-          scanning && styles.buttonStop,
-          pressed && { opacity: 0.88 },
-          disabled && !scanning && styles.buttonDisabled,
-        ]}
-      >
-        {scanning ? <ActivityIndicator color="#fff" style={{ marginRight: 10 }} /> : null}
-        <Text style={styles.buttonText}>{scanning ? 'Stop scan' : 'Scan this place'}</Text>
-      </Pressable>
+  const handlePress = async () => {
+    try {
+      await Haptics.impactAsync(
+        scanning ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light,
+      );
+    } catch {
+      // haptics optional
+    }
+    if (scanning) onStop();
+    else onScan();
+  };
 
-      {scanning && progress ? (
-        <View style={styles.progressBlock}>
-          <View style={styles.track}>
-            <View style={[styles.fill, { width: `${percent}%` }]} />
-          </View>
-          <Text style={styles.progressText}>
-            {progress.checked}/{progress.total} hosts · {progress.found} found
-            {progress.currentIp ? ` · ${progress.currentIp}` : ''}
+  return (
+    <FadeIn delay={360}>
+      <View style={styles.wrap}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={handlePress}
+          disabled={!scanning && disabled}
+          style={({ pressed }) => [
+            styles.button,
+            scanning && styles.buttonStop,
+            pressed && { transform: [{ scale: 0.985 }] },
+            disabled && !scanning && styles.buttonDisabled,
+          ]}
+        >
+          <Text style={styles.buttonText}>{scanning ? 'Stop scan' : 'Scan this place'}</Text>
+          <Text style={styles.buttonSub}>
+            {scanning ? 'Tap to cancel' : 'Hosts · ports · banners'}
           </Text>
-        </View>
-      ) : null}
-    </View>
+        </Pressable>
+
+        {scanning && progress ? (
+          <View style={styles.progressBlock}>
+            <View style={styles.track}>
+              <View style={[styles.fill, { width: `${percent}%` }]} />
+            </View>
+            <TypeLine
+              key={`${progress.checked}-${progress.found}`}
+              text={`${progress.checked}/${progress.total} hosts · ${progress.found} found${
+                progress.currentIp ? ` · ${progress.currentIp}` : ''
+              }`}
+              style={styles.progressText}
+              charMs={8}
+              active={false}
+            />
+          </View>
+        ) : null}
+      </View>
+    </FadeIn>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
-    gap: space.sm,
+    gap: space.md,
   },
   button: {
-    minHeight: 54,
-    borderRadius: 16,
+    minHeight: 72,
+    borderRadius: 20,
     backgroundColor: colors.accent,
-    alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row',
     paddingHorizontal: space.lg,
+    paddingVertical: 14,
   },
   buttonStop: {
     backgroundColor: colors.warn,
   },
   buttonDisabled: {
-    opacity: 0.45,
+    opacity: 0.42,
   },
   buttonText: {
-    fontFamily: 'DMSans_700Bold',
-    fontSize: 17,
+    fontFamily: 'Syne_700Bold',
+    fontSize: 20,
     color: '#fff',
+    letterSpacing: -0.3,
+  },
+  buttonSub: {
+    marginTop: 2,
+    fontFamily: 'SpaceGrotesk_400Regular',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.78)',
   },
   progressBlock: {
-    gap: 8,
+    gap: 10,
   },
   track: {
-    height: 6,
-    borderRadius: 4,
-    backgroundColor: 'rgba(15,122,110,0.15)',
+    height: 7,
+    borderRadius: 6,
+    backgroundColor: 'rgba(12,110,99,0.14)',
     overflow: 'hidden',
   },
   fill: {
     height: '100%',
     backgroundColor: colors.accent,
-    borderRadius: 4,
+    borderRadius: 6,
   },
   progressText: {
     fontFamily: 'IBMPlexMono_400Regular',

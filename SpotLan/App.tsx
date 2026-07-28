@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,22 +8,27 @@ import {
   Platform,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   useFonts,
-  DMSans_400Regular,
-  DMSans_500Medium,
-  DMSans_700Bold,
-} from '@expo-google-fonts/dm-sans';
+  Syne_700Bold,
+  Syne_800ExtraBold,
+} from '@expo-google-fonts/syne';
+import {
+  SpaceGrotesk_400Regular,
+  SpaceGrotesk_500Medium,
+} from '@expo-google-fonts/space-grotesk';
 import {
   IBMPlexMono_400Regular,
   IBMPlexMono_500Medium,
 } from '@expo-google-fonts/ibm-plex-mono';
 
+import { Atmosphere } from './src/components/Atmosphere';
+import { Hero } from './src/components/Hero';
 import { NetworkPanel } from './src/components/NetworkPanel';
 import { ScanControls } from './src/components/ScanControls';
-import { ScanRadar } from './src/components/ScanRadar';
 import { DeviceRow } from './src/components/DeviceRow';
+import { FadeIn, MotionWords } from './src/components/motion';
 import { colors, space } from './src/theme';
 import type { DiscoveredHost, NetworkSnapshot, ScanProgress } from './src/types';
 import { readNetworkSnapshot } from './src/utils/network';
@@ -32,9 +36,10 @@ import { scanSubnet } from './src/utils/scanner';
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    DMSans_400Regular,
-    DMSans_500Medium,
-    DMSans_700Bold,
+    Syne_700Bold,
+    Syne_800ExtraBold,
+    SpaceGrotesk_400Regular,
+    SpaceGrotesk_500Medium,
     IBMPlexMono_400Regular,
     IBMPlexMono_500Medium,
   });
@@ -93,14 +98,15 @@ export default function App() {
         selfIp: network.ipAddress,
         signal: controller.signal,
         onProgress: (p) => setProgress({ ...p }),
-        onHost: (host) => setHosts((prev) => {
-          const without = prev.filter((h) => h.ip !== host.ip);
-          return [...without, host].sort((a, b) => {
-            const aa = Number(a.ip.split('.')[3]);
-            const bb = Number(b.ip.split('.')[3]);
-            return aa - bb;
-          });
-        }),
+        onHost: (host) =>
+          setHosts((prev) => {
+            const without = prev.filter((h) => h.ip !== host.ip);
+            return [...without, host].sort((a, b) => {
+              const aa = Number(a.ip.split('.')[3]);
+              const bb = Number(b.ip.split('.')[3]);
+              return aa - bb;
+            });
+          }),
       });
     } catch (e) {
       if (!controller.signal.aborted) {
@@ -120,42 +126,21 @@ export default function App() {
 
   return (
     <View style={styles.root}>
-      <LinearGradient
-        colors={[colors.bgTop, colors.bgMid, colors.bgBottom]}
-        locations={[0, 0.45, 1]}
-        style={StyleSheet.absoluteFill}
-      />
+      <Atmosphere />
       <StatusBar style="dark" />
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
         <ScrollView
           contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={loadingNetwork && !scanning} onRefresh={refreshNetwork} />
           }
         >
-          <View style={styles.brandBlock}>
-            <Text style={styles.brand}>SpotLan</Text>
-            <Text style={styles.tagline}>
-              New place-la Wi‑Fi, hosts, servers, open ports — oru scan-la.
-            </Text>
-          </View>
-
-          <View style={styles.radarRow}>
-            <ScanRadar active={scanning} size={108} />
-            <View style={styles.radarCopy}>
-              <Text style={styles.radarTitle}>
-                {scanning ? 'Scanning the LAN…' : 'Ready when you are'}
-              </Text>
-              <Text style={styles.radarSub}>
-                Looks for live devices on your current subnet and reads service banners where
-                possible.
-              </Text>
-            </View>
-          </View>
+          <Hero scanning={scanning} />
 
           <NetworkPanel network={network} loading={loadingNetwork} />
 
-          <View style={{ height: space.md }} />
+          <View style={{ height: space.lg }} />
 
           <ScanControls
             scanning={scanning}
@@ -165,34 +150,46 @@ export default function App() {
             onStop={stopScan}
           />
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? (
+            <FadeIn>
+              <Text style={styles.error}>{error}</Text>
+            </FadeIn>
+          ) : null}
 
           {!canScan && !loadingNetwork ? (
-            <Text style={styles.hint}>
-              Wi‑Fi / LAN connection தேவை. Phone-ஐ network-ஓட connect பண்ணி refresh பண்ணு.
-            </Text>
+            <FadeIn delay={100}>
+              <Text style={styles.hint}>
+                Wi‑Fi / LAN connection தேவை. Phone-ஐ network-ஓட connect பண்ணி pull-to-refresh
+                பண்ணு.
+              </Text>
+            </FadeIn>
           ) : null}
 
           <View style={styles.resultsHeader}>
-            <Text style={styles.resultsTitle}>Devices</Text>
-            <Text style={styles.resultsCount}>{hosts.length}</Text>
+            <MotionWords text="Devices found" style={styles.resultsTitle} delay={0} stagger={40} />
+            <Text style={styles.resultsCount}>{String(hosts.length).padStart(2, '0')}</Text>
           </View>
 
           {hosts.length === 0 && !scanning ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>Inga innum onnum illa</Text>
-              <Text style={styles.emptyBody}>
-                Scan this place — router, printers, cameras, NAS, web UIs with open ports will show
-                up here.
-              </Text>
-            </View>
+            <FadeIn delay={80}>
+              <View style={styles.empty}>
+                <Text style={styles.emptyTitle}>Inga innum onnum illa</Text>
+                <Text style={styles.emptyBody}>
+                  Scan this place — router, printers, cameras, NAS, web UIs with open ports show up
+                  with motion as they answer.
+                </Text>
+              </View>
+            </FadeIn>
           ) : (
             hosts.map((host, index) => <DeviceRow key={host.ip} host={host} index={index} />)
           )}
 
           <Text style={styles.footnote}>
             SpotLan probes your current LAN only. Use it on networks you own or have permission to
-            inspect. {Platform.OS === 'ios' ? 'SSID needs location permission on iOS.' : 'SSID needs location permission on Android.'}
+            inspect.{' '}
+            {Platform.OS === 'ios'
+              ? 'SSID needs location permission on iOS.'
+              : 'SSID needs location permission on Android.'}
           </Text>
         </ScrollView>
       </SafeAreaView>
@@ -214,96 +211,59 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: space.lg,
-    paddingTop: space.lg,
-    paddingBottom: 48,
-  },
-  brandBlock: {
-    marginBottom: space.lg,
-  },
-  brand: {
-    fontFamily: 'DMSans_700Bold',
-    fontSize: 42,
-    lineHeight: 46,
-    color: colors.ink,
-    letterSpacing: -1,
-  },
-  tagline: {
-    marginTop: 8,
-    fontFamily: 'DMSans_400Regular',
-    fontSize: 16,
-    lineHeight: 24,
-    color: colors.inkMuted,
-    maxWidth: 340,
-  },
-  radarRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.md,
-    marginBottom: space.lg,
-  },
-  radarCopy: {
-    flex: 1,
-  },
-  radarTitle: {
-    fontFamily: 'DMSans_700Bold',
-    fontSize: 18,
-    color: colors.ink,
-    marginBottom: 4,
-  },
-  radarSub: {
-    fontFamily: 'DMSans_400Regular',
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.inkMuted,
+    paddingTop: space.md,
+    paddingBottom: 56,
   },
   error: {
     marginTop: space.sm,
-    fontFamily: 'DMSans_500Medium',
+    fontFamily: 'SpaceGrotesk_500Medium',
     color: colors.warn,
     fontSize: 14,
   },
   hint: {
     marginTop: space.sm,
-    fontFamily: 'DMSans_400Regular',
+    fontFamily: 'SpaceGrotesk_400Regular',
     color: colors.inkMuted,
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   resultsHeader: {
-    marginTop: space.xl,
-    marginBottom: space.sm,
+    marginTop: space.xxl,
+    marginBottom: space.md,
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
+    gap: 12,
   },
   resultsTitle: {
-    fontFamily: 'DMSans_700Bold',
-    fontSize: 22,
+    fontFamily: 'Syne_700Bold',
+    fontSize: 26,
     color: colors.ink,
+    letterSpacing: -0.5,
   },
   resultsCount: {
     fontFamily: 'IBMPlexMono_500Medium',
-    fontSize: 16,
+    fontSize: 18,
     color: colors.accentDeep,
   },
   empty: {
-    paddingVertical: space.lg,
+    paddingVertical: space.md,
   },
   emptyTitle: {
-    fontFamily: 'DMSans_700Bold',
-    fontSize: 16,
+    fontFamily: 'Syne_700Bold',
+    fontSize: 17,
     color: colors.ink,
     marginBottom: 6,
   },
   emptyBody: {
-    fontFamily: 'DMSans_400Regular',
+    fontFamily: 'SpaceGrotesk_400Regular',
     fontSize: 14,
-    lineHeight: 21,
+    lineHeight: 22,
     color: colors.inkMuted,
   },
   footnote: {
     marginTop: space.xl,
-    fontFamily: 'DMSans_400Regular',
+    fontFamily: 'SpaceGrotesk_400Regular',
     fontSize: 12,
     lineHeight: 18,
     color: colors.inkFaint,

@@ -1,7 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { Platform } from 'react-native';
 import { colors, space } from '../theme';
 import type { NetworkSnapshot } from '../types';
+import { FadeIn, TypeLine } from './motion';
 
 type Props = {
   network: NetworkSnapshot | null;
@@ -19,13 +22,26 @@ function Row({ label, value, mono }: { label: string; value: string; mono?: bool
   );
 }
 
+function PanelShell({ children }: { children: React.ReactNode }) {
+  if (Platform.OS === 'web') {
+    return <View style={[styles.panel, styles.panelFallback]}>{children}</View>;
+  }
+  return (
+    <BlurView intensity={28} tint="light" style={styles.panel}>
+      {children}
+    </BlurView>
+  );
+}
+
 export function NetworkPanel({ network, loading }: Props) {
   if (loading || !network) {
     return (
-      <View style={styles.panel}>
-        <Text style={styles.kicker}>This place</Text>
-        <Text style={styles.title}>Reading network…</Text>
-      </View>
+      <FadeIn delay={280}>
+        <PanelShell>
+          <Text style={styles.kicker}>This place</Text>
+          <TypeLine text="Reading your network…" style={styles.title} />
+        </PanelShell>
+      </FadeIn>
     );
   }
 
@@ -35,47 +51,52 @@ export function NetworkPanel({ network, loading }: Props) {
   const gateway = network.gatewayGuess ?? '—';
 
   return (
-    <View style={styles.panel}>
-      <Text style={styles.kicker}>This place</Text>
-      <Text style={styles.title} numberOfLines={1}>
-        {ssid}
-      </Text>
-      <Text style={styles.sub}>
-        {network.isConnected ? 'Connected' : 'Offline'} · {network.connectionType}
-      </Text>
-      <View style={styles.divider} />
-      <Row label="Your IP" value={ip} mono />
-      <Row label="Subnet" value={subnet} mono />
-      <Row label="Gateway" value={gateway} mono />
-    </View>
+    <FadeIn delay={280}>
+      <PanelShell>
+        <Text style={styles.kicker}>This place</Text>
+        <TypeLine key={ssid} text={ssid} style={styles.title} charMs={22} />
+        <Text style={styles.sub}>
+          {network.isConnected ? 'Connected' : 'Offline'} · {network.connectionType}
+        </Text>
+        <View style={styles.divider} />
+        <Row label="Your IP" value={ip} mono />
+        <Row label="Subnet" value={subnet} mono />
+        <Row label="Gateway" value={gateway} mono />
+      </PanelShell>
+    </FadeIn>
   );
 }
 
 const styles = StyleSheet.create({
   panel: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
+    borderRadius: 24,
     padding: space.lg,
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.line,
+    backgroundColor: colors.surface,
+  },
+  panelFallback: {
+    backgroundColor: colors.surfaceStrong,
   },
   kicker: {
-    fontFamily: 'DMSans_500Medium',
+    fontFamily: 'SpaceGrotesk_500Medium',
     fontSize: 12,
-    letterSpacing: 1.4,
+    letterSpacing: 2,
     textTransform: 'uppercase',
     color: colors.accentDeep,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   title: {
-    fontFamily: 'DMSans_700Bold',
-    fontSize: 28,
-    lineHeight: 32,
+    fontFamily: 'Syne_700Bold',
+    fontSize: 30,
+    lineHeight: 34,
     color: colors.ink,
+    letterSpacing: -0.5,
   },
   sub: {
-    marginTop: 6,
-    fontFamily: 'DMSans_400Regular',
+    marginTop: 8,
+    fontFamily: 'SpaceGrotesk_400Regular',
     fontSize: 14,
     color: colors.inkMuted,
   },
@@ -88,17 +109,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 6,
+    paddingVertical: 7,
     gap: 12,
   },
   label: {
-    fontFamily: 'DMSans_400Regular',
+    fontFamily: 'SpaceGrotesk_400Regular',
     fontSize: 14,
     color: colors.inkMuted,
   },
   value: {
     flexShrink: 1,
-    fontFamily: 'DMSans_500Medium',
+    fontFamily: 'SpaceGrotesk_500Medium',
     fontSize: 14,
     color: colors.ink,
     textAlign: 'right',
