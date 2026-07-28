@@ -1,0 +1,31 @@
+export const colors = {
+  bgTop: '#D9EDE8',
+  bgMid: '#C8DCE8',
+  bgBottom: '#F2F6F4',
+  ink: '#0E1C22',
+  inkMuted: '#3D5660',
+  inkFaint: '#6E858E',
+  accent: '#0C6E63',
+  accentSoft: '#BFE0D9',
+  accentDeep: '#084943',
+  accentHot: '#E8F7F3',
+  warn: '#C45A1A',
+  surface: 'rgba(255,255,255,0.55)',
+  surfaceSolid: '#FFFFFF',
+  surfaceStrong: 'rgba(255,255,255,0.82)',
+  line: 'rgba(14,28,34,0.08)',
+  live: '#178A4C',
+  portBg: '#EAF4F1',
+  orbTeal: 'rgba(12,110,99,0.18)',
+  orbBlue: 'rgba(70,130,160,0.16)',
+  orbMint: 'rgba(120,180,150,0.14)',
+};
+
+export const space = {
+  xs: 6,
+  sm: 10,
+  md: 16,
+  lg: 24,
+  xl: 32,
+  xxl: 48,
+};

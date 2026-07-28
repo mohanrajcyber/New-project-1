@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "SpotLan",
+    "slug": "SpotLan",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "plugins": [
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "SpotLan uses location permission only to read the Wi‑Fi network name (SSID) on this device."
+        }
+      ]
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "SpotLan scans your local network to find devices, hostnames, and open service ports at this place.",
+        "NSLocationWhenInUseUsageDescription": "SpotLan uses location permission only to read the Wi‑Fi SSID.",
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
+      },
+      "bundleIdentifier": "com.spotlan.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E8F3F1",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "ACCESS_WIFI_STATE",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CHANGE_WIFI_STATE",
+        "NEARBY_WIFI_DEVICES"
+      ],
+      "package": "com.spotlan.app",
+      "usesCleartextTraffic": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
