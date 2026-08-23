@@ -159,7 +159,7 @@
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
-      padding: 14px 14px calc(var(--nav-h) + var(--safe-b) + 22px);
+      padding: 14px 14px calc(var(--nav-h) + var(--safe-b) + 36px);
     }
     .scroll.no-nav { padding-bottom: calc(22px + var(--safe-b)); }
     .tabbar {
@@ -262,11 +262,19 @@
       min-height: 100%;
       display: flex;
       flex-direction: column;
-      justify-content: flex-end;
-      padding: calc(48px + var(--safe-t)) 20px calc(28px + var(--safe-b));
+      background: var(--cream);
+    }
+    .login-head {
       background:
-        radial-gradient(500px 280px at 80% 0%, rgba(201,162,39,.25), transparent 60%),
-        linear-gradient(180deg, #4A1024 0%, #7A1F3D 42%, var(--cream) 42%);
+        radial-gradient(420px 220px at 90% -10%, rgba(201,162,39,.28), transparent 60%),
+        linear-gradient(165deg, #4A1024 0%, #7A1F3D 72%, #8d2748 100%);
+      padding: calc(52px + var(--safe-t)) 22px 36px;
+      color: #fff;
+    }
+    .login-body {
+      flex: 1;
+      margin-top: -22px;
+      padding: 0 16px calc(24px + var(--safe-b));
     }
     .crest {
       width: 72px; height: 72px; border-radius: 22px;
@@ -275,8 +283,8 @@
       font-weight: 800; font-size: 22px;
       box-shadow: var(--shadow); margin-bottom: 14px;
     }
-    .login h2 { color: #fff; margin: 0 0 6px; font-size: 28px; line-height: 1.15; }
-    .login .lead { color: rgba(255,255,255,.85); margin: 0 0 28px; font-size: 14px; line-height: 1.45; }
+    .login h2 { color: #fff; margin: 0 0 8px; font-size: 28px; line-height: 1.15; }
+    .login .lead { color: rgba(255,255,255,.88); margin: 0; font-size: 14px; line-height: 1.45; }
     .panel {
       background: var(--paper);
       border-radius: 22px;
@@ -320,6 +328,10 @@
     .topic .summary {
       background: #f8ecd0; color: #5c4310;
       border-radius: 14px; padding: 12px; font-size: 14px; line-height: 1.45; margin-bottom: 12px;
+    }
+    .point, .card p, .ans, .row p, .topic .summary {
+      overflow-wrap: break-word;
+      word-wrap: break-word;
     }
     .point {
       background: var(--paper);
@@ -396,9 +408,28 @@
       }
       .notch, .home-bar { display: none; }
       .topbar { padding-top: calc(12px + var(--safe-t)); min-height: 64px; }
+      .login-head { padding-top: calc(24px + var(--safe-t)); padding-bottom: 28px; }
     }
-    @media (max-height: 700px) and (max-width: 480px) {
+    /* Laptop preview: leave room for fake home indicator */
+    @media (min-width: 481px) {
+      .tabbar {
+        height: calc(var(--nav-h) + 14px);
+        padding-bottom: 18px;
+      }
+      .scroll { padding-bottom: calc(var(--nav-h) + 44px); }
+    }
+    @media (max-height: 700px) {
       .login h2 { font-size: 24px; }
+      .crest { width: 58px; height: 58px; border-radius: 18px; font-size: 18px; }
+      .hero { padding: 14px; }
+      .hero h2 { font-size: 18px; }
+      .ring { width: 50px; height: 50px; }
+      .ring span { width: 38px; height: 38px; }
+    }
+    @media (max-width: 340px) {
+      .tab { font-size: 9px; gap: 2px; }
+      .grid2 { gap: 8px; }
+      .card { padding: 12px; }
     }
   </style>
 </head>
@@ -930,14 +961,18 @@
 
     function viewLogin() {
       return `<div class="login">
-        <div class="crest">E</div>
-        <h2>EasyCS</h2>
-        <p class="lead">Plain notes, short quizzes, interview lines, LinkedIn and job steps — on your phone.</p>
-        <div class="panel">
-          <label for="nm">Your name</label>
-          <input id="nm" type="text" maxlength="40" placeholder="e.g. Priya" autocomplete="name" />
-          <button class="btn" id="startBtn">Start learning</button>
-          <p class="hint">Saved only on this phone. No password, no server.</p>
+        <div class="login-head">
+          <div class="crest">E</div>
+          <h2>EasyCS</h2>
+          <p class="lead">Plain notes, short quizzes, interview lines, LinkedIn and job steps — on your phone.</p>
+        </div>
+        <div class="login-body">
+          <div class="panel">
+            <label for="nm">Your name</label>
+            <input id="nm" type="text" maxlength="40" placeholder="e.g. Priya" autocomplete="name" enterkeyhint="done" />
+            <button class="btn" id="startBtn">Start learning</button>
+            <p class="hint">Saved only on this phone. No password, no server.</p>
+          </div>
         </div>
       </div>`;
     }
