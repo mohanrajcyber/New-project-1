@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#4A1024" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>EasyCS — Auxilium College</title>
+  <style>
+    :root {
+      --maroon: #7A1F3D;
+      --wine: #4A1024;
+      --rose: #A33B5C;
+      --gold: #C9A227;
+      --gold-soft: #E8D48A;
+      --cream: #F7EFE6;
+      --paper: #FFFCF8;
+      --ink: #1C1216;
+      --muted: #6E5560;
+      --line: #EAD8D0;
+      --ok: #2C7A4A;
+      --ok-bg: #E7F6EC;
+      --bad: #B42318;
+      --bad-bg: #FDECEC;
+      --chip: #F3E4DC;
+      --shadow: 0 10px 28px rgba(74, 16, 36, 0.14);
+      --nav-h: 62px;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Tamil", "Noto Sans", Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--sans);
+      color: var(--ink);
+      background: #2a1218;
+    }
+    button, input { font-family: inherit; }
+    button { touch-action: manipulation; }
+    img, svg { display: block; max-width: 100%; }
+    a { color: var(--maroon); }
+
+    /* Desk + phone chassis so layout always looks like a phone */
+    .desk {
+      min-height: 100dvh;
+      min-height: 100svh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background:
+        radial-gradient(1200px 600px at 50% -10%, #5a2233 0%, transparent 55%),
+        linear-gradient(180deg, #1a0b10 0%, #2a1218 40%, #12080b 100%);
+    }
+    .phone {
+      position: relative;
+      width: 100%;
+      max-width: 390px;
+      height: min(844px, calc(100dvh - 24px));
+      height: min(844px, calc(100svh - 24px));
+      background: var(--cream);
+      border-radius: 42px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 12px #12080b,
+        0 0 0 14px #3a2428,
+        0 30px 80px rgba(0,0,0,.45);
+      display: flex;
+      flex-direction: column;
+    }
+    .notch {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 118px;
+      height: 28px;
+      background: #12080b;
+      border-radius: 20px;
+      z-index: 40;
+      pointer-events: none;
+    }
+    .home-bar {
+      position: absolute;
+      left: 50%;
+      bottom: 6px;
+      transform: translateX(-50%);
+      width: 128px;
+      height: 5px;
+      background: rgba(28,18,22,.28);
+      border-radius: 99px;
+      z-index: 40;
+      pointer-events: none;
+    }
+    .screen {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--cream);
+    }
+    .topbar {
+      flex: 0 0 auto;
+      padding: calc(38px + var(--safe-t)) 16px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(180deg, #4A1024 0%, #7A1F3D 100%);
+      color: #fff;
+      min-height: 86px;
+    }
+    .topbar h1 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: .2px;
+      line-height: 1.25;
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .topbar .sub {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      opacity: .78;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 12px;
+      background: rgba(255,255,255,.12);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .scroll {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding: 14px 14px calc(var(--nav-h) + var(--safe-b) + 22px);
+    }
+    .scroll.no-nav { padding-bottom: calc(22px + var(--safe-b)); }
+    .tabbar {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: calc(var(--nav-h) + var(--safe-b));
+      padding: 6px 6px calc(10px + var(--safe-b));
+      background: rgba(255,252,248,.94);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      z-index: 30;
+    }
+    .tab {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      min-height: 48px;
+      cursor: pointer;
+      border-radius: 12px;
+    }
+    .tab svg { width: 22px; height: 22px; }
+    .tab.on { color: var(--maroon); background: #f8e8ee; }
+
+    .hero {
+      background: linear-gradient(135deg, #4A1024, #9B2D52);
+      color: #fff;
+      border-radius: 20px;
+      padding: 18px 16px 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+    .hero .hi { font-size: 13px; opacity: .8; margin: 0 0 4px; }
+    .hero h2 { margin: 0 0 8px; font-size: 22px; line-height: 1.2; }
+    .hero p { margin: 0; font-size: 13px; line-height: 1.45; opacity: .9; }
+    .progress-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+    .ring {
+      width: 58px; height: 58px; flex-shrink: 0;
+      border-radius: 50%;
+      background: conic-gradient(var(--gold) calc(var(--p) * 1%), rgba(255,255,255,.18) 0);
+      display: grid; place-items: center;
+    }
+    .ring span {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: #4A1024; display: grid; place-items: center;
+      font-size: 12px; font-weight: 700; color: var(--gold-soft);
+    }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 4px 12px rgba(74,16,36,.05);
+    }
+    .card.tap { cursor: pointer; }
+    .card h3 { margin: 0 0 6px; font-size: 15px; }
+    .card p { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.4; }
+    .sec { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 16px 2px 8px; }
+    .list { display: flex; flex-direction: column; gap: 8px; }
+    .row {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      color: inherit;
+    }
+    .row .badge {
+      width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+      display: grid; place-items: center;
+      background: var(--chip); color: var(--maroon);
+      font-weight: 800; font-size: 12px;
+    }
+    .row .grow { flex: 1; min-width: 0; }
+    .row h3 { margin: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row p { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+    .chev { color: var(--muted); flex-shrink: 0; }
+    .pill {
+      display: inline-flex; align-items: center;
+      background: var(--chip); color: var(--maroon);
+      border-radius: 99px; padding: 3px 8px;
+      font-size: 11px; font-weight: 700;
+    }
+    .pill.gold { background: #f8ecd0; color: #7a5a10; }
+    .pill.ok { background: var(--ok-bg); color: var(--ok); }
+
+    .login {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: calc(48px + var(--safe-t)) 20px calc(28px + var(--safe-b));
+      background:
+        radial-gradient(500px 280px at 80% 0%, rgba(201,162,39,.25), transparent 60%),
+        linear-gradient(180deg, #4A1024 0%, #7A1F3D 42%, var(--cream) 42%);
+    }
+    .crest {
+      width: 72px; height: 72px; border-radius: 22px;
+      background: #fff; color: var(--maroon);
+      display: grid; place-items: center;
+      font-weight: 800; font-size: 22px;
+      box-shadow: var(--shadow); margin-bottom: 14px;
+    }
+    .login h2 { color: #fff; margin: 0 0 6px; font-size: 28px; line-height: 1.15; }
+    .login .lead { color: rgba(255,255,255,.85); margin: 0 0 28px; font-size: 14px; line-height: 1.45; }
+    .panel {
+      background: var(--paper);
+      border-radius: 22px;
+      padding: 18px 16px 16px;
+      box-shadow: var(--shadow);
+    }
+    label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+    input[type="text"] {
+      width: 100%;
+      height: 48px;
+      border: 1.5px solid var(--line);
+      border-radius: 14px;
+      padding: 0 14px;
+      font-size: 16px; /* prevents iOS zoom */
+      background: #fff;
+      color: var(--ink);
+      outline: none;
+    }
+    input[type="text"]:focus { border-color: var(--maroon); }
+    .btn {
+      width: 100%;
+      height: 50px;
+      border: 0;
+      border-radius: 14px;
+      background: var(--maroon);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+    .btn.ghost {
+      background: transparent;
+      color: var(--maroon);
+      border: 1.5px solid var(--line);
+    }
+    .btn:disabled { opacity: .5; }
+    .hint { font-size: 12px; color: var(--muted); margin: 10px 0 0; line-height: 1.4; text-align: center; }
+
+    .topic h2 { margin: 0 0 8px; font-size: 20px; line-height: 1.25; }
+    .topic .summary {
+      background: #f8ecd0; color: #5c4310;
+      border-radius: 14px; padding: 12px; font-size: 14px; line-height: 1.45; margin-bottom: 12px;
+    }
+    .point {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 12px 12px 14px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+      border-left: 4px solid var(--maroon);
+    }
+    .kp { background: var(--ok-bg); border-left-color: var(--ok); }
+
+    .opt {
+      width: 100%;
+      text-align: left;
+      border: 1.5px solid var(--line);
+      background: var(--paper);
+      border-radius: 14px;
+      padding: 12px 12px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      line-height: 1.4;
+      cursor: pointer;
+      min-height: 48px;
+    }
+    .opt.on { border-color: var(--maroon); background: #f8e8ee; }
+    .opt.good { border-color: var(--ok); background: var(--ok-bg); }
+    .opt.bad { border-color: var(--bad); background: var(--bad-bg); }
+    .q-no { font-size: 12px; font-weight: 700; color: var(--maroon); margin-bottom: 6px; }
+    .result {
+      text-align: center;
+      padding: 18px 8px;
+    }
+    .result .score { font-size: 42px; font-weight: 800; color: var(--maroon); }
+
+    .step {
+      display: flex; gap: 12px; margin-bottom: 12px;
+    }
+    .step .n {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: var(--maroon); color: #fff;
+      display: grid; place-items: center; font-size: 12px; font-weight: 800; margin-top: 2px;
+    }
+    .step h3 { margin: 0 0 4px; font-size: 15px; }
+    .step p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
+
+    .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+    .chips button {
+      flex-shrink: 0; border: 0; height: 34px; padding: 0 12px; border-radius: 99px;
+      background: var(--chip); color: var(--ink); font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .chips button.on { background: var(--maroon); color: #fff; }
+
+    .qa { border: 1px solid var(--line); background: var(--paper); border-radius: 14px; margin-bottom: 8px; overflow: hidden; }
+    .qa summary {
+      list-style: none; cursor: pointer; padding: 12px 14px; font-size: 14px; font-weight: 650;
+    }
+    .qa summary::-webkit-details-marker { display: none; }
+    .qa .ans { padding: 0 14px 12px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+    .tiny { font-size: 11px; color: var(--muted); }
+
+    /* Real phones: edge-to-edge, hide chassis chrome */
+    @media (max-width: 480px) {
+      .desk { padding: 0; background: #12080b; }
+      .phone {
+        max-width: none;
+        width: 100%;
+        height: 100dvh;
+        height: 100svh;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      .notch, .home-bar { display: none; }
+      .topbar { padding-top: calc(12px + var(--safe-t)); min-height: 64px; }
+    }
+    @media (max-height: 700px) and (max-width: 480px) {
+      .login h2 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="desk">
+    <div class="phone" id="phone">
+      <div class="notch" aria-hidden="true"></div>
+      <div class="screen" id="app"></div>
+      <div class="home-bar" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    const KEY = "easycs-auxilium-v1";
+
+    const I = {
+      back: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>',
+      home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9z"/></svg>',
+      book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5z"/><path d="M6 3v16"/></svg>',
+      mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+      in: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 11v6M8 8h.01M12 17v-4a2 2 0 0 1 4 0v4"/></svg>',
+      bag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V6a4 4 0 0 1 8 0v1"/></svg>',
+      chev: '<svg class="chev" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>'
+    };
+
+    const SYLLABUS = [
+      {
+        year: 1, label: "Year 1", sems: [
+          { id: "sem1", name: "Semester 1", subjects: ["c"] },
+          { id: "sem2", name: "Semester 2", subjects: ["ds"] }
+        ]
+      },
+      {
+        year: 2, label: "Year 2", sems: [
+          { id: "sem3", name: "Semester 3", subjects: ["java", "dbms"] },
+          { id: "sem4", name: "Semester 4", subjects: ["os", "cn"] }
+        ]
+      },
+      {
+        year: 3, label: "Year 3", sems: [
+          { id: "sem5", name: "Semester 5", subjects: ["python", "se"] },
+          { id: "sem6", name: "Semester 6", subjects: ["web", "cloud"] }
+        ]
+      }
+    ];
+
+    const SUBJECTS = {
+      c: {
+        id: "c", name: "Programming in C", short: "C", sem: "Sem 1",
+        blurb: "First coding language. Learn step by step.",
+        topics: [
+          {
+            id: "c-intro", title: "Introduction to C",
+            summary: "C is a simple language used to talk to the computer in a clear way.",
+            explain: [
+              "A program is a list of instructions. The computer follows them one by one.",
+              "C was made so programmers can write fast programs that work on many computers.",
+              "You write code in a .c file, then a compiler turns it into something the computer can run.",
+              "Every C program starts from a function called main(). That is the front door."
+            ],
+            keyPoints: ["C is a programming language", "Compiler converts code to a program", "main() is where the program starts"]
+          },
+          {
+            id: "c-types", title: "Variables & Data Types",
+            summary: "A variable is a named box that holds a value. The type says what kind of value.",
+            explain: [
+              "int stores whole numbers like 18, 0, -5.",
+              "float and double store decimal numbers like 98.6.",
+              "char stores one character like 'A'.",
+              "You must declare a variable before using it: int age = 18;",
+              "Choose a clear name: marks is better than x."
+            ],
+            keyPoints: ["int = whole number", "float = decimal", "char = one letter", "Declare before use"]
+          },
+          {
+            id: "c-ops", title: "Operators",
+            summary: "Operators are symbols that calculate or compare values.",
+            explain: [
+              "Arithmetic: +  -  *  /  %  ( % gives remainder).",
+              "Relational: >  <  >=  <=  ==  !=  (used in if conditions).",
+              "Logical: && (and), || (or), ! (not).",
+              "Assignment: = puts a value in a variable. == checks if two values are equal. Do not mix them."
+            ],
+            keyPoints: ["= assigns, == compares", "% is remainder", "&& means both must be true"]
+          },
+          {
+            id: "c-control", title: "if, else, switch",
+            summary: "These let the program choose different paths.",
+            explain: [
+              "if (condition) { ... } runs only when the condition is true.",
+              "else runs when the if condition is false.",
+              "else if is used for more than two choices.",
+              "switch is useful when you check one variable against many exact values (like 1, 2, 3).",
+              "Always use curly braces { } so you do not get confused later."
+            ],
+            keyPoints: ["if checks a condition", "else is the other path", "switch matches exact values"]
+          },
+          {
+            id: "c-loops", title: "Loops",
+            summary: "A loop repeats work until you tell it to stop.",
+            explain: [
+              "for is used when you know how many times to repeat: for(i=1; i<=5; i++).",
+              "while checks the condition first, then repeats.",
+              "do-while runs at least once, then checks the condition.",
+              "break jumps out of the loop. continue skips to the next round.",
+              "If the stop condition is never reached, the loop never ends. Be careful."
+            ],
+            keyPoints: ["for = counted repeat", "while = repeat while true", "break stops the loop"]
+          },
+          {
+            id: "c-arrays", title: "Arrays & Strings",
+            summary: "An array is a row of same-type values. A string is a row of characters.",
+            explain: [
+              "int a[5]; can hold 5 integers. Index starts at 0: a[0] is the first item.",
+              "The last index is size-1. For 5 items, last is a[4].",
+              "A string in C is char name[20]; and it ends with a hidden '\\0' character.",
+              "Use %s to print a string, %d for int, %f for float.",
+              "Do not write past the end of the array. That causes bugs."
+            ],
+            keyPoints: ["Index starts at 0", "String ends with \\0", "Same type in one array"]
+          },
+          {
+            id: "c-fn", title: "Functions",
+            summary: "A function is a small named task you can reuse.",
+            explain: [
+              "You write a function once and call it many times.",
+              "return type says what it gives back. void means it gives nothing back.",
+              "Parameters are inputs. Example: int add(int a, int b).",
+              "Keep functions small. One function = one job.",
+              "main() is also a function. Your own functions make programs easier to read."
+            ],
+            keyPoints: ["Function = reusable task", "void returns nothing", "Parameters are inputs"]
+          },
+          {
+            id: "c-ptr", title: "Pointers, Structures, Files",
+            summary: "Pointers store addresses. Structures group related data. Files save data on disk.",
+            explain: [
+              "Every variable lives at an address in memory. A pointer holds that address.",
+              "*p means 'the value at that address'. &x means 'the address of x'.",
+              "A structure groups different fields: name, age, marks together as one student.",
+              "File handling: fopen to open, fprintf/fscanf to write or read, fclose to close.",
+              "Always close a file after using it."
+            ],
+            keyPoints: ["Pointer stores address", "struct groups fields", "fopen / fclose files"]
+          }
+        ]
+      },
+      ds: {
+        id: "ds", name: "Data Structures", short: "DS", sem: "Sem 2",
+        blurb: "How we store and arrange data so programs stay fast.",
+        topics: [
+          {
+            id: "ds-intro", title: "What is a Data Structure?",
+            summary: "A data structure is a way to keep data organised so you can use it quickly.",
+            explain: [
+              "If notes are dumped in a bag, finding one page is slow. If they are in folders, it is fast.",
+              "We pick a structure based on what we do often: insert, delete, search, or sort.",
+              "Linear structures: array, list, stack, queue. Non-linear: tree, graph.",
+              "Time complexity is a simple way to say 'how slow it gets when data grows'."
+            ],
+            keyPoints: ["DS = organised storage", "Pick DS based on the job", "Linear vs non-linear"]
+          },
+          {
+            id: "ds-array", title: "Arrays",
+            summary: "Fixed-size row of items, all the same type, sitting in a line in memory.",
+            explain: [
+              "You can jump to any index quickly. That is called random access.",
+              "Inserting in the middle is slow because you must shift items.",
+              "Size is usually fixed when you create it.",
+              "Use arrays when the count is known and you need fast lookup by position."
+            ],
+            keyPoints: ["Fast access by index", "Slow insert in middle", "Fixed size often"]
+          },
+          {
+            id: "ds-ll", title: "Linked Lists",
+            summary: "A chain of nodes. Each node holds data and a link to the next node.",
+            explain: [
+              "Singly linked list: each node points forward only.",
+              "Doubly linked list: each node points to next and previous. Easier to go backwards.",
+              "Insert and delete can be easy if you already have the node.",
+              "You cannot jump to index 50 directly. You walk from the start.",
+              "Use a list when the size keeps changing."
+            ],
+            keyPoints: ["Node = data + link", "Easy insert/delete", "No direct index jump"]
+          },
+          {
+            id: "ds-stack", title: "Stacks",
+            summary: "Last In, First Out — like a stack of plates.",
+            explain: [
+              "push adds on top. pop removes the top. peek looks at the top without removing.",
+              "Used in undo, browser back button, and function calls.",
+              "If you pop an empty stack, that is underflow. If you push on a full stack, overflow.",
+              "You can build a stack with an array or a linked list."
+            ],
+            keyPoints: ["LIFO", "push / pop / peek", "Undo uses a stack"]
+          },
+          {
+            id: "ds-queue", title: "Queues",
+            summary: "First In, First Out — like a line at the canteen.",
+            explain: [
+              "enqueue adds at the rear. dequeue removes from the front.",
+              "Used in printers, ticket counters, and CPU scheduling.",
+              "Circular queue reuses empty slots at the front so space is not wasted.",
+              "A deque allows insert/delete at both ends."
+            ],
+            keyPoints: ["FIFO", "enqueue rear, dequeue front", "Circular queue saves space"]
+          },
+          {
+            id: "ds-tree", title: "Trees & BST",
+            summary: "A tree is a hierarchy. A Binary Search Tree keeps smaller values on the left.",
+            explain: [
+              "Root is the top node. Leaves have no children.",
+              "Binary tree: each node has at most 2 children.",
+              "BST rule: left child < parent < right child. This makes search faster.",
+              "Traversals: inorder (Left, Root, Right) gives sorted order in a BST.",
+              "Preorder: Root, Left, Right. Postorder: Left, Right, Root."
+            ],
+            keyPoints: ["Root at top", "BST: left < parent < right", "Inorder of BST is sorted"]
+          },
+          {
+            id: "ds-search", title: "Searching",
+            summary: "Find an item. Linear search checks one by one. Binary search jumps to the middle.",
+            explain: [
+              "Linear search works on any list. Worst case you check every item.",
+              "Binary search needs a sorted array. You cut the search space in half each time.",
+              "Binary search is much faster for large sorted data.",
+              "If the array is not sorted, sort it first or use linear search."
+            ],
+            keyPoints: ["Linear = one by one", "Binary needs sorted array", "Binary is faster on big data"]
+          },
+          {
+            id: "ds-sort", title: "Sorting",
+            summary: "Sorting puts items in order, usually small to big.",
+            explain: [
+              "Bubble sort: keep swapping neighbours if they are in the wrong order.",
+              "Selection sort: pick the smallest remaining item and put it in place.",
+              "Insertion sort: insert each item into the already-sorted left part. Good for small lists.",
+              "Faster methods you will hear later: merge sort, quick sort.",
+              "Know the idea first. Then remember which is slow vs fast."
+            ],
+            keyPoints: ["Bubble swaps neighbours", "Insertion is good for small lists", "Sorted data helps search"]
+          }
+        ]
+      },
+      java: {
+        id: "java", name: "Java Programming", short: "Java", sem: "Sem 3",
+        blurb: "Object-oriented language used in many companies.",
+        topics: [
+          { id: "java-intro", title: "Java basics", summary: "Java code runs on the JVM, so the same program can run on many computers.", explain: ["Write once, run anywhere is the idea.", "A class is a blueprint. An object is a real thing made from that blueprint.", "public static void main is the starting point.", "javac compiles. java runs."], keyPoints: ["JVM runs Java", "Class = blueprint", "main is the start"] },
+          { id: "java-oop", title: "OOP ideas", summary: "OOP means you model the world as objects that have data and actions.", explain: ["Encapsulation: keep data private, give methods to use it.", "Inheritance: a child class reuses a parent class.", "Polymorphism: one name, many forms (overloading / overriding).", "Abstraction: show only what is needed."], keyPoints: ["4 pillars of OOP", "private data + public methods", "extends = inheritance"] },
+          { id: "java-cls", title: "Class, object, method", summary: "You define a class, create objects with new, and call methods.", explain: ["new Student() creates an object in memory.", "Constructors set initial values.", "this means the current object.", "Keep one class per idea: Student, Book, BankAccount."], keyPoints: ["new creates object", "constructor initialises", "this = current object"] }
+        ]
+      },
+      dbms: {
+        id: "dbms", name: "DBMS", short: "DBMS", sem: "Sem 3",
+        blurb: "Store data safely in tables and ask questions with SQL.",
+        topics: [
+          { id: "db-intro", title: "What is a database?", summary: "A database is an organised collection of data. DBMS is software that manages it.", explain: ["Excel is a sheet. A database is built for many users, rules, and recovery.", "Tables have rows (records) and columns (fields).", "Examples: MySQL, Oracle, PostgreSQL.", "DBMS handles insert, update, delete, and search."], keyPoints: ["Table = rows + columns", "DBMS manages the data", "Many users can share it"] },
+          { id: "db-keys", title: "Keys & relationships", summary: "Keys uniquely identify a row. Relationships connect tables.", explain: ["Primary key: unique id, like register number.", "Foreign key: a value that points to a primary key in another table.", "One-to-many: one department, many students.", "Normalisation reduces duplicate data."], keyPoints: ["Primary key is unique", "Foreign key links tables", "Normalise to reduce copies"] },
+          { id: "db-sql", title: "SQL you must know", summary: "SQL is the language to talk to a database.", explain: ["SELECT * FROM student; reads rows.", "WHERE filters: WHERE marks > 60.", "INSERT adds, UPDATE changes, DELETE removes.", "JOIN combines rows from two tables using a key.", "Practice on paper: write the query, then check the result."], keyPoints: ["SELECT reads", "WHERE filters", "JOIN connects tables"] }
+        ]
+      },
+      os: {
+        id: "os", name: "Operating Systems", short: "OS", sem: "Sem 4",
+        blurb: "The manager between you, apps, and the hardware.",
+        topics: [
+          { id: "os-intro", title: "What is an OS?", summary: "Windows, Linux, Android are operating systems. They share the CPU, memory, and files.", explain: ["Without an OS, every program would have to talk to hardware itself.", "Kernel is the core of the OS.", "Functions: process, memory, file, device, and security management."], keyPoints: ["OS manages resources", "Kernel is the core", "CPU / memory / files"] },
+          { id: "os-proc", title: "Process & CPU scheduling", summary: "A process is a running program. Scheduling decides who gets the CPU next.", explain: ["Ready, running, waiting are common states.", "FCFS: first come first served.", "Round Robin: each process gets a time slice.", "A deadlock is when processes wait on each other forever."], keyPoints: ["Process = running program", "Round Robin uses time slices", "Deadlock = circular wait"] },
+          { id: "os-mem", title: "Memory & files", summary: "RAM is working memory. Virtual memory uses disk when RAM is full.", explain: ["Paging splits memory into equal pages.", "A file system organises files in folders.", "Cache is a small fast memory for recently used data."], keyPoints: ["RAM is working space", "Paging splits memory", "File system stores files"] }
+        ]
+      },
+      cn: {
+        id: "cn", name: "Computer Networks", short: "CN", sem: "Sem 4",
+        blurb: "How computers talk: LAN, internet, IP, and protocols.",
+        topics: [
+          { id: "cn-intro", title: "Network basics", summary: "A network connects computers so they can share data.", explain: ["LAN is a small local network (college lab). WAN is wide (the internet).", "IP address is like a home address for a device.", "Bandwidth is how much data can flow."], keyPoints: ["LAN local, WAN wide", "IP = address", "Protocol = rules"] },
+          { id: "cn-osi", title: "OSI 7 layers", summary: "OSI is a 7-layer model that explains networking in steps.", explain: ["7 Application, 6 Presentation, 5 Session, 4 Transport, 3 Network, 2 Data Link, 1 Physical.", "Memory trick: All People Seem To Need Data Processing.", "You do not need to memorise every protocol on day one. Know what each layer is for."], keyPoints: ["7 layers", "Transport = TCP/UDP", "Network = IP"] },
+          { id: "cn-tcp", title: "TCP/IP, HTTP", summary: "TCP is reliable delivery. IP finds the path. HTTP is how the web works.", explain: ["TCP checks that data arrived. UDP is faster but may lose packets (video calls).", "DNS turns google.com into an IP address.", "HTTP GET asks for a page. HTTPS is the secure version."], keyPoints: ["TCP reliable", "DNS name → IP", "HTTPS is secure HTTP"] }
+        ]
+      },
+      python: {
+        id: "python", name: "Python", short: "Py", sem: "Sem 5",
+        blurb: "Easy syntax. Used in data, web, and automation jobs.",
+        topics: [
+          { id: "py-intro", title: "Why Python?", summary: "Python reads almost like English. Beginners and companies both use it.", explain: ["No curly braces for blocks. Indentation matters.", "print('Hello') shows output.", "Used in AI, data, scripting, and web (Django/Flask)."], keyPoints: ["Indentation matters", "print() for output", "Used in many jobs"] },
+          { id: "py-syn", title: "Syntax & types", summary: "int, float, str, list, dict are everyday types.", explain: ["list = [1,2,3] can grow. dict = {'name':'Anu'} maps key to value.", "if / for / while look cleaner than C.", "def greet(name): defines a function.", "for x in items: loops through a list."], keyPoints: ["list is a sequence", "dict is key → value", "def defines a function"] },
+          { id: "py-lib", title: "Libraries (idea)", summary: "You import ready-made tools instead of writing everything.", explain: ["import math, import datetime are common.", "pandas is for tables. matplotlib is for charts.", "Do not memorise every library. Learn to read docs and practice small programs."], keyPoints: ["import brings tools", "Practice small programs", "Docs are your friend"] }
+        ]
+      },
+      se: {
+        id: "se", name: "Software Engineering", short: "SE", sem: "Sem 5",
+        blurb: "How teams build software without chaos.",
+        topics: [
+          { id: "se-sdlc", title: "SDLC", summary: "Software Development Life Cycle is the steps from idea to maintenance.", explain: ["Common steps: requirement, design, coding, testing, deploy, maintain.", "If you skip requirement, you build the wrong thing.", "Testing is not optional."], keyPoints: ["Requirement first", "Test after code", "Maintain after release"] },
+          { id: "se-model", title: "Models", summary: "Waterfall is step by step. Agile works in short sprints.", explain: ["Waterfall: finish one phase fully before the next. Simple, less flexible.", "Agile/Scrum: small working pieces every 1–2 weeks.", "Companies like Agile for most product work."], keyPoints: ["Waterfall = linear", "Agile = short sprints", "Scrum is a popular Agile way"] },
+          { id: "se-test", title: "Testing basics", summary: "Testing finds bugs before users do.", explain: ["Unit test: one small function.", "Integration: modules together.", "Black box: test without seeing code. White box: test with code knowledge."], keyPoints: ["Unit = small piece", "Find bugs early", "Test cases need expected result"] }
+        ]
+      },
+      web: {
+        id: "web", name: "Web Technology", short: "Web", sem: "Sem 6",
+        blurb: "HTML structure, CSS look, JavaScript behaviour.",
+        topics: [
+          { id: "web-html", title: "HTML", summary: "HTML is the skeleton of a page.", explain: ["Tags like h1, p, a, img, form build the page.", "Every page has html, head, body.", "Links use <a href='...'>."], keyPoints: ["HTML = structure", "body holds content", "a is a link"] },
+          { id: "web-css", title: "CSS", summary: "CSS paints and lays out the page.", explain: ["color, font-size, margin, padding, display.", "Mobile first: design for phone, then expand.", "Flexbox is useful for rows and columns on phones."], keyPoints: ["CSS = look + layout", "Mobile first", "Flexbox for rows"] },
+          { id: "web-js", title: "JavaScript", summary: "JS makes the page respond to taps and input.", explain: ["document.querySelector finds an element.", "addEventListener('click', ...) runs code on tap.", "This EasyCS app itself is HTML + CSS + JS in one file."], keyPoints: ["JS = behaviour", "Listen to click", "No page reload needed for a simple app"] }
+        ]
+      },
+      cloud: {
+        id: "cloud", name: "Cloud Computing", short: "Cloud", sem: "Sem 6",
+        blurb: "Use computers on the internet instead of only your lab PC.",
+        topics: [
+          { id: "cl-intro", title: "What is cloud?", summary: "You rent computing (storage, servers, apps) over the internet.", explain: ["Examples: Google Drive, AWS, Azure, GitHub Pages.", "You pay for what you use, and you can grow quickly.", "College labs are on-premise. Cloud is off-site, on demand."], keyPoints: ["Rent over internet", "AWS / Azure / GCP", "Grow when needed"] },
+          { id: "cl-svc", title: "IaaS, PaaS, SaaS", summary: "Three service models, from raw machines to finished apps.", explain: ["IaaS: you rent virtual machines (EC2).", "PaaS: you deploy code, they manage servers (Heroku-style).", "SaaS: you just use the app (Gmail)."], keyPoints: ["IaaS = machines", "PaaS = platform", "SaaS = software"] },
+          { id: "cl-job", title: "Why it matters for jobs", summary: "Even freshers are asked cloud basics in interviews.", explain: ["Know the three models and one example each.", "GitHub Pages can host this HTML file for free.", "Learn one cloud console later: AWS free tier or Azure student."], keyPoints: ["Basics are interview-safe", "Host static sites easily", "Pick one cloud to explore"] }
+        ]
+      }
+    };
+
+    const QUIZZES = {
+      "c-intro": [
+        { q: "Where does a C program start running?", a: ["from the first comment", "from main()", "from header files", "from the last function"], c: 1 },
+        { q: "What does a compiler do?", a: ["prints output", "turns C code into a runnable program", "deletes bugs automatically", "only checks spelling"], c: 1 },
+        { q: "C is mainly a…", a: ["programming language", "database", "operating system", "browser"], c: 0 }
+      ],
+      "c-types": [
+        { q: "Which type stores whole numbers?", a: ["float", "char", "int", "double only"], c: 2 },
+        { q: "char stores…", a: ["a sentence of any length", "one character", "only digits", "true/false only"], c: 1 },
+        { q: "Correct declaration?", a: ["age int = 18;", "int age = 18;", "18 = int age;", "integer age 18;"], c: 1 }
+      ],
+      "c-ops": [
+        { q: "= vs == ?", a: ["both assign", "= assigns, == compares", "== assigns, = compares", "both compare"], c: 1 },
+        { q: "5 % 2 is…", a: ["2.5", "0", "1", "5"], c: 2 },
+        { q: "&& means…", a: ["or", "not", "both conditions true", "assign"], c: 2 }
+      ],
+      "c-control": [
+        { q: "if runs its block when…", a: ["the condition is true", "always", "never", "only on Fridays"], c: 0 },
+        { q: "switch is best when…", a: ["comparing ranges like marks > 50", "matching one value to many exact cases", "repeating work", "declaring variables"], c: 1 },
+        { q: "else runs when…", a: ["if is true", "if is false", "always", "the program ends"], c: 1 }
+      ],
+      "c-loops": [
+        { q: "Which loop is best when you know the count?", a: ["for", "if", "switch", "goto only"], c: 0 },
+        { q: "break does what?", a: ["skips one round", "stops the loop", "restarts the program", "declares a variable"], c: 1 },
+        { q: "do-while always…", a: ["never runs", "runs at least once", "needs an array", "cannot use i++"], c: 1 }
+      ],
+      "c-arrays": [
+        { q: "First index of an array is…", a: ["1", "0", "-1", "size"], c: 1 },
+        { q: "For int a[5], last index is…", a: ["5", "4", "0", "6"], c: 1 },
+        { q: "A C string ends with…", a: ["\\n", "\\0", "space", ";"], c: 1 }
+      ],
+      "c-fn": [
+        { q: "A function is…", a: ["a reusable task", "a compiler", "a loop only", "a header file"], c: 0 },
+        { q: "void means…", a: ["returns an int", "returns nothing", "always errors", "needs an array"], c: 1 },
+        { q: "Parameters are…", a: ["outputs only", "inputs to the function", "comments", "file names"], c: 1 }
+      ],
+      "c-ptr": [
+        { q: "A pointer stores…", a: ["only text", "a memory address", "the compiler name", "the screen size"], c: 1 },
+        { q: "&x means…", a: ["value of x", "address of x", "pointer named x", "delete x"], c: 1 },
+        { q: "After using a file you should…", a: ["leave it open", "fclose", "reboot", "change the datatype"], c: 1 }
+      ],
+      "ds-intro": [
+        { q: "A data structure is…", a: ["a way to organise data", "a brand of CPU", "only used in C++", "a type of virus"], c: 0 },
+        { q: "Stack and queue are…", a: ["non-linear", "linear", "databases", "OSI layers"], c: 1 },
+        { q: "We pick a DS based on…", a: ["the college name", "what operations we do often", "font size", "the compiler colour"], c: 1 }
+      ],
+      "ds-array": [
+        { q: "Arrays give fast…", a: ["insert in the middle", "access by index", "unlimited size always", "tree traversal"], c: 1 },
+        { q: "Inserting in the middle of an array is often…", a: ["instant", "slow because of shifting", "impossible", "done with TCP"], c: 1 },
+        { q: "Array items are usually…", a: ["mixed types always", "same type", "only strings", "only functions"], c: 1 }
+      ],
+      "ds-ll": [
+        { q: "A linked list node has…", a: ["only an index", "data and a link", "only a filename", "seven OSI layers"], c: 1 },
+        { q: "Linked lists are good when…", a: ["size changes often", "you only need index 0", "the list is never used", "you need a compiler"], c: 0 },
+        { q: "To reach item 10 you…", a: ["jump by index always", "walk from the start", "use DNS", "use main()"], c: 1 }
+      ],
+      "ds-stack": [
+        { q: "Stack order is…", a: ["FIFO", "LIFO", "random", "alphabetical only"], c: 1 },
+        { q: "push does what?", a: ["removes top", "adds on top", "sorts the stack", "prints main"], c: 1 },
+        { q: "Undo in an editor uses…", a: ["a queue", "a stack", "HTTP", "a compiler"], c: 1 }
+      ],
+      "ds-queue": [
+        { q: "Queue order is…", a: ["LIFO", "FIFO", "sorted only", "stack-like"], c: 1 },
+        { q: "dequeue removes from the…", a: ["rear", "front", "middle always", "compiler"], c: 1 },
+        { q: "Canteen line is like a…", a: ["stack", "queue", "BST", "pointer"], c: 1 }
+      ],
+      "ds-tree": [
+        { q: "The top node is the…", a: ["leaf", "root", "queue", "token"], c: 1 },
+        { q: "In a BST, left child is…", a: ["always bigger", "smaller than parent", "a string only", "the root always"], c: 1 },
+        { q: "Inorder on a BST gives…", a: ["random order", "sorted order", "only leaves", "IP addresses"], c: 1 }
+      ],
+      "ds-search": [
+        { q: "Binary search needs…", a: ["a sorted array", "a graph only", "HTML", "an empty list"], c: 0 },
+        { q: "Linear search…", a: ["checks one by one", "needs a BST", "uses TCP", "cannot find 0"], c: 0 },
+        { q: "For large sorted data, faster is…", a: ["linear", "binary", "closing the file", "using void"], c: 1 }
+      ],
+      "ds-sort": [
+        { q: "Bubble sort mainly…", a: ["swaps neighbours", "uses DNS", "builds a stack only", "opens a file"], c: 0 },
+        { q: "Insertion sort is often good for…", a: ["tiny lists", "unrelated networks", "OSI layer 1 only", "compiling Java"], c: 0 },
+        { q: "Sorting helps…", a: ["binary search", "hiding errors", "the notch", "CSS colours"], c: 0 }
+      ]
+    };
+
+    const INTERVIEW = {
+      tech: [
+        { q: "What is a variable?", a: "A named box that stores a value. Example: int marks = 80;" },
+        { q: "Array vs linked list?", a: "Array: fast index, fixed-ish size. List: easy insert/delete, walk from start." },
+        { q: "What is OOP?", a: "Model using objects. Four ideas: encapsulation, inheritance, polymorphism, abstraction." },
+        { q: "Primary key?", a: "A unique id for a row, like register number. It should not be empty or repeated." },
+        { q: "What is an OS?", a: "Software that manages CPU, memory, files, and devices. Example: Windows, Linux, Android." },
+        { q: "TCP vs UDP?", a: "TCP is reliable (web pages). UDP is faster but may drop packets (live video)." },
+        { q: "What is SDLC?", a: "Steps to build software: requirement, design, code, test, deploy, maintain." },
+        { q: "Explain your project.", a: "Say: problem → what you built → your role → tools → one difficulty → result. Keep it 1 minute." }
+      ],
+      hr: [
+        { q: "Tell me about yourself.", a: "Name, college (Auxilium College, B.Sc CS), year, one skill, one project, what job you want. 45–60 seconds." },
+        { q: "Strengths?", a: "Pick 2 real ones: 'I finish lab work on time', 'I explain topics to classmates'. Give a small example." },
+        { q: "Weakness?", a: "Pick one you are fixing: 'I used to fear interviews, so I practise answers aloud every day.'" },
+        { q: "Why this company?", a: "Say what they do + how you can learn + you want to grow. Do not say 'only for salary'." },
+        { q: "Where do you see yourself in 5 years?", a: "A stronger developer who can own a module and help juniors. Keep it honest." },
+        { q: "Are you willing to relocate?", a: "If yes, say yes clearly. If you have limits, say them politely." }
+      ],
+      tips: [
+        "Speak slowly. Clear English is enough. You do not need big words.",
+        "If you do not know, say: 'I have not used that yet. Here is how I would find out…'",
+        "Keep a notebook of 10 technical + 6 HR answers. Practise standing up.",
+        "Dress simple and neat. Phone on silent. Reach 15 minutes early.",
+        "After the interview, note what was asked. Revise that evening."
+      ]
+    };
+
+    const LINKEDIN = [
+      { t: "Create the account", d: "Go to linkedin.com on your phone. Use your own name and a college email if you have one. Add a phone number you can access." },
+      { t: "Photo", d: "Use a clear face photo. Plain wall, daylight, slight smile. No group photo, no heavy filters. Crop close to the face." },
+      { t: "Headline", d: "Not just 'Student'. Try: B.Sc Computer Science student at Auxilium College | C, Java, SQL | Open to internships." },
+      { t: "About (summary)", d: "4–6 lines: who you are, what you are learning, one project, what role you want (intern / trainee). First person ('I')." },
+      { t: "Education", d: "Auxilium College (Autonomous), Vellore — B.Sc Computer Science, years of study. Add a few subjects and marks/CGPA if you are happy to share." },
+      { t: "Skills", d: "Add C, Data Structures, Java, SQL, HTML, Python if you studied them. Ask a classmate or teacher to endorse later." },
+      { t: "Projects", d: "Add EasyCS or any lab mini-project: 3 bullets — what it does, what you used, what you learned." },
+      { t: "Network", d: "Connect with classmates, alumnae, and teachers. Send a short note: 'Hello, I am a CS student at Auxilium…'. Follow 10 companies you like." }
+    ];
+
+    const JOBS = {
+      types: [
+        { t: "IT services", d: "TCS, Infosys, Wipro, Cognizant, Accenture, HCL. Many hire freshers through campus or NQT-style tests. Training is given." },
+        { t: "Product / startup", d: "Build one product. Interviews can be harder (coding + projects) but you learn fast. Internships help a lot." },
+        { t: "BPO / support + IT", d: "Some roles mix customer support and basic IT. Good speaking practice. Check the night-shift details before you accept." },
+        { t: "Government / teaching", d: "TNPSC, banking, teaching after more study. Different exam path. Keep it as a parallel plan if you want." }
+      ],
+      apply: [
+        { t: "Campus placement", d: "Watch college notices. Keep resume + ID + mark sheets in a folder. Practise aptitude + one coding language." },
+        { t: "Off-campus tests", d: "TCS NQT, Infosys, Wipro, Cognizant drives. Register with a proper email. Do mock tests on your phone." },
+        { t: "LinkedIn + Naukri", d: "Complete LinkedIn first. On Naukri, upload resume, set Vellore/Chennai/Bengaluru as locations you can go to." },
+        { t: "Resume (1 page)", d: "Name, phone, email, LinkedIn. Education. Skills. 1–2 projects. Lab languages. No photo needed unless they ask. PDF only." },
+        { t: "Apply smart", d: "10 honest applications with a matching resume beat 100 random ones. Track date, company, and result in a notes app." }
+      ]
+    };
+
+    function esc(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    function load() {
+      try { return JSON.parse(localStorage.getItem(KEY) || "null") || { name: "", done: {}, quiz: {} }; }
+      catch (e) { return { name: "", done: {}, quiz: {} }; }
+    }
+    function save(st) { localStorage.setItem(KEY, JSON.stringify(st)); }
+
+    function allTopics() {
+      const out = [];
+      Object.values(SUBJECTS).forEach(s => s.topics.forEach(t => out.push(t.id)));
+      return out;
+    }
+    function findTopic(id) {
+      for (const s of Object.values(SUBJECTS)) {
+        const t = s.topics.find(x => x.id === id);
+        if (t) return { subject: s, topic: t };
+      }
+      return null;
+    }
+    function pct(st) {
+      const ids = allTopics();
+      const n = ids.filter(id => st.done[id]).length;
+      return ids.length ? Math.round((n / ids.length) * 100) : 0;
+    }
+
+    let state = load();
+    let quizPick = {};
+
+    function go(hash) { location.hash = hash; }
+
+    function parse() {
+      const h = (location.hash || "#/").replace(/^#/, "") || "/";
+      const p = h.split("/").filter(Boolean);
+      if (!state.name) return { view: "login" };
+      if (!p.length || p[0] === "home") return { view: "home" };
+      if (p[0] === "learn") return { view: "learn" };
+      if (p[0] === "year") return { view: "year", year: Number(p[1]) };
+      if (p[0] === "subject") return { view: "subject", id: p[1] };
+      if (p[0] === "topic") return { view: "topic", id: p[1] };
+      if (p[0] === "quiz") return { view: "quiz", id: p[1], qi: Number(p[2] || 0) };
+      if (p[0] === "qresult") return { view: "qresult", id: p[1] };
+      if (p[0] === "interview") return { view: "interview", tab: p[1] || "tech" };
+      if (p[0] === "linkedin") return { view: "linkedin" };
+      if (p[0] === "jobs") return { view: "jobs" };
+      return { view: "home" };
+    }
+
+    function topbar(title, sub, back) {
+      return `<div class="topbar">
+        ${back ? `<button class="icon-btn" data-go="${esc(back)}" aria-label="Back">${I.back}</button>` : `<div class="icon-btn" style="background:rgba(255,255,255,.18);font-weight:800;font-size:12px">CS</div>`}
+        <h1>${esc(title)}<span class="sub">${esc(sub || "Auxilium College · B.Sc CS")}</span></h1>
+      </div>`;
+    }
+
+    function tabbar(active) {
+      const tabs = [
+        ["home", I.home, "Home"],
+        ["learn", I.book, "Learn"],
+        ["interview", I.mic, "Interview"],
+        ["linkedin", I.in, "LinkedIn"],
+        ["jobs", I.bag, "Jobs"]
+      ];
+      return `<nav class="tabbar">${tabs.map(([id, ic, lab]) =>
+        `<button class="tab ${active === id ? "on" : ""}" data-go="#/${id}">${ic}<span>${lab}</span></button>`
+      ).join("")}</nav>`;
+    }
+
+    function viewLogin() {
+      return `<div class="login">
+        <div class="crest">E</div>
+        <h2>EasyCS</h2>
+        <p class="lead">Plain notes, short quizzes, interview lines, LinkedIn and job steps — on your phone.</p>
+        <div class="panel">
+          <label for="nm">Your name</label>
+          <input id="nm" type="text" maxlength="40" placeholder="e.g. Priya" autocomplete="name" />
+          <button class="btn" id="startBtn">Start learning</button>
+          <p class="hint">Saved only on this phone. No password, no server.</p>
+        </div>
+      </div>`;
+    }
+
+    function viewHome() {
+      const p = pct(state);
+      const first = "c";
+      return topbar("EasyCS", "Hi " + state.name) + `<div class="scroll">
+        <div class="hero">
+          <p class="hi">Vanakkam, ${esc(state.name)}</p>
+          <h2>Learn CS the simple way</h2>
+          <p>Year 1 to Year 3 notes, then interview, LinkedIn and jobs.</p>
+          <div class="progress-row">
+            <div class="ring" style="--p:${p}"><span>${p}%</span></div>
+            <div><strong style="font-size:14px">Topic progress</strong>
+            <p style="margin:4px 0 0;font-size:12px;opacity:.85">Tap a topic and mark it done after you read.</p></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="card tap" data-go="#/learn"><h3>Learning path</h3><p>C, DS, Java, DBMS…</p></div>
+          <div class="card tap" data-go="#/subject/${first}"><h3>Start C</h3><p>Semester 1 first paper</p></div>
+          <div class="card tap" data-go="#/interview"><h3>Interview</h3><p>Tech + HR answers</p></div>
+          <div class="card tap" data-go="#/linkedin"><h3>LinkedIn</h3><p>Profile in 8 steps</p></div>
+        </div>
+        <div class="sec">Today</div>
+        <button class="row" data-go="#/jobs">
+          <div class="badge">💼</div>
+          <div class="grow"><h3>Job guide</h3><p>Campus, NQT, resume, apply</p></div>
+          ${I.chev}
+        </button>
+        <p class="tiny" style="margin-top:14px;text-align:center">
+          <button class="btn ghost" id="logout" style="height:42px">Switch student</button>
+        </p>
+      </div>` + tabbar("home");
+    }
+
+    function viewLearn() {
+      return topbar("Learning path", "Year 1 → Year 3") + `<div class="scroll"><div class="list">
+        ${SYLLABUS.map(y => {
+          const ids = y.sems.flatMap(s => s.subjects.flatMap(sid => SUBJECTS[sid].topics.map(t => t.id)));
+          const done = ids.filter(id => state.done[id]).length;
+          return `<button class="row" data-go="#/year/${y.year}">
+            <div class="badge">${y.year}</div>
+            <div class="grow"><h3>${esc(y.label)}</h3>
+            <p>${y.sems.map(s => s.name).join(" · ")} · ${done}/${ids.length} topics</p></div>
+            ${I.chev}
+          </button>`;
+        }).join("")}
+      </div>
+      <p class="hint">Full sample notes: Programming in C and Data Structures. Other papers have short plain notes too.</p>
+      </div>` + tabbar("learn");
+    }
+
+    function viewYear(year) {
+      const y = SYLLABUS.find(x => x.year === year);
+      if (!y) return viewLearn();
+      return topbar(y.label, "Choose a subject", "#/learn") + `<div class="scroll">
+        ${y.sems.map(sem => `<div class="sec">${esc(sem.name)}</div><div class="list">
+          ${sem.subjects.map(sid => {
+            const s = SUBJECTS[sid];
+            const done = s.topics.filter(t => state.done[t.id]).length;
+            return `<button class="row" data-go="#/subject/${s.id}">
+              <div class="badge">${esc(s.short)}</div>
+              <div class="grow"><h3>${esc(s.name)}</h3><p>${esc(s.blurb)} · ${done}/${s.topics.length}</p></div>
+              ${I.chev}
+            </button>`;
+          }).join("")}
+        </div>`).join("")}
+      </div>` + tabbar("learn");
+    }
+
+    function viewSubject(id) {
+      const s = SUBJECTS[id];
+      if (!s) return viewLearn();
+      const year = SYLLABUS.find(y => y.sems.some(sem => sem.subjects.includes(id)));
+      return topbar(s.name, s.sem + " · " + s.topics.length + " topics", year ? "#/year/" + year.year : "#/learn") + `<div class="scroll">
+        <p class="hint" style="text-align:left;margin-top:0">${esc(s.blurb)}</p>
+        <div class="list">${s.topics.map((t, i) => {
+          const done = !!state.done[t.id];
+          const qs = state.quiz[t.id];
+          return `<button class="row" data-go="#/topic/${t.id}">
+            <div class="badge">${i + 1}</div>
+            <div class="grow"><h3>${esc(t.title)}</h3>
+            <p>${done ? "Read" : "Not read yet"}${qs != null ? " · Quiz " + qs.score + "/" + qs.total : ""}</p></div>
+            ${done ? '<span class="pill ok">Done</span>' : I.chev}
+          </button>`;
+        }).join("")}</div>
+      </div>` + tabbar("learn");
+    }
+
+    function viewTopic(id) {
+      const found = findTopic(id);
+      if (!found) return viewLearn();
+      const { subject: s, topic: t } = found;
+      const done = !!state.done[id];
+      const hasQ = !!QUIZZES[id];
+      return topbar(t.title, s.name, "#/subject/" + s.id) + `<div class="scroll topic">
+        <div class="summary">${esc(t.summary)}</div>
+        <div class="sec">In simple words</div>
+        ${t.explain.map(p => `<div class="point">${esc(p)}</div>`).join("")}
+        <div class="sec">Revise fast</div>
+        ${t.keyPoints.map(p => `<div class="point kp">• ${esc(p)}</div>`).join("")}
+        <button class="btn" id="markDone">${done ? "Mark as not done" : "Mark topic done"}</button>
+        ${hasQ ? `<button class="btn ghost" data-go="#/quiz/${id}/0">Take short quiz</button>` : ""}
+      </div>` + tabbar("learn");
+    }
+
+    function viewQuiz(id, qi) {
+      const qs = QUIZZES[id];
+      const found = findTopic(id);
+      if (!qs || !found) return viewTopic(id);
+      if (qi >= qs.length) {
+        go("#/qresult/" + id);
+        return "";
+      }
+      const item = qs[qi];
+      const sel = (quizPick[id] || [])[qi];
+      return topbar("Quiz", found.topic.title, "#/topic/" + id) + `<div class="scroll">
+        <div class="q-no">Question ${qi + 1} of ${qs.length}</div>
+        <h2 style="font-size:18px;margin:0 0 14px;line-height:1.35">${esc(item.q)}</h2>
+        ${item.a.map((opt, i) => `<button class="opt ${sel === i ? "on" : ""}" data-pick="${i}">${esc(opt)}</button>`).join("")}
+        <button class="btn" id="nextQ" ${sel == null ? "disabled" : ""}>${qi === qs.length - 1 ? "See score" : "Next"}</button>
+      </div>` + tabbar("learn");
+    }
+
+    function viewQResult(id) {
+      const qs = QUIZZES[id];
+      const found = findTopic(id);
+      if (!qs || !found) return viewLearn();
+      const picks = quizPick[id] || [];
+      let score = 0;
+      qs.forEach((item, i) => { if (picks[i] === item.c) score++; });
+      state.quiz[id] = { score, total: qs.length };
+      state.done[id] = true;
+      save(state);
+      return topbar("Result", found.topic.title, "#/topic/" + id) + `<div class="scroll">
+        <div class="result card">
+          <div class="score">${score}/${qs.length}</div>
+          <p>${score === qs.length ? "Full marks. Nice." : score >= qs.length - 1 ? "Almost. Read the red ones." : "Revise the notes and try once more."}</p>
+        </div>
+        ${qs.map((item, i) => {
+          const ok = picks[i] === item.c;
+          return `<div class="point ${ok ? "kp" : ""}" style="${ok ? "" : "background:var(--bad-bg);border-left-color:var(--bad)"}">
+            <strong>${esc(item.q)}</strong><br/>
+            Your answer: ${esc(item.a[picks[i]] || "—")}<br/>
+            Correct: ${esc(item.a[item.c])}
+          </div>`;
+        }).join("")}
+        <button class="btn" data-go="#/subject/${found.subject.id}">Back to subject</button>
+        <button class="btn ghost" data-go="#/quiz/${id}/0" id="retry">Retry quiz</button>
+      </div>` + tabbar("learn");
+    }
+
+    function viewInterview(tab) {
+      const t = tab === "hr" ? "hr" : tab === "tips" ? "tips" : "tech";
+      return topbar("Interview prep", "Speak slow and clear") + `<div class="scroll">
+        <div class="chips">
+          <button class="${t === "tech" ? "on" : ""}" data-go="#/interview/tech">Technical</button>
+          <button class="${t === "hr" ? "on" : ""}" data-go="#/interview/hr">HR</button>
+          <button class="${t === "tips" ? "on" : ""}" data-go="#/interview/tips">Tips</button>
+        </div>
+        <div style="height:10px"></div>
+        ${t === "tips"
+          ? INTERVIEW.tips.map(x => `<div class="point kp">${esc(x)}</div>`).join("")
+          : INTERVIEW[t].map(x => `<details class="qa"><summary>${esc(x.q)}</summary><div class="ans">${esc(x.a)}</div></details>`).join("")}
+      </div>` + tabbar("interview");
+    }
+
+    function viewLinkedin() {
+      return topbar("LinkedIn guide", "Do these on your phone") + `<div class="scroll">
+        ${LINKEDIN.map((s, i) => `<div class="card" style="margin-bottom:10px">
+          <div class="step" style="margin:0">
+            <div class="n">${i + 1}</div>
+            <div><h3>${esc(s.t)}</h3><p>${esc(s.d)}</p></div>
+          </div>
+        </div>`).join("")}
+      </div>` + tabbar("linkedin");
+    }
+
+    function viewJobs() {
+      return topbar("Job guide", "How freshers actually apply") + `<div class="scroll">
+        <div class="sec">Company types</div>
+        ${JOBS.types.map(x => `<div class="card" style="margin-bottom:8px"><h3>${esc(x.t)}</h3><p>${esc(x.d)}</p></div>`).join("")}
+        <div class="sec">How to apply</div>
+        ${JOBS.apply.map((x, i) => `<div class="step"><div class="n">${i + 1}</div><div><h3>${esc(x.t)}</h3><p>${esc(x.d)}</p></div></div>`).join("")}
+      </div>` + tabbar("jobs");
+    }
+
+    function render() {
+      const r = parse();
+      const root = document.getElementById("app");
+      let html = "";
+      if (r.view === "login") html = viewLogin();
+      else if (r.view === "home") html = viewHome();
+      else if (r.view === "learn") html = viewLearn();
+      else if (r.view === "year") html = viewYear(r.year);
+      else if (r.view === "subject") html = viewSubject(r.id);
+      else if (r.view === "topic") html = viewTopic(r.id);
+      else if (r.view === "quiz") html = viewQuiz(r.id, r.qi);
+      else if (r.view === "qresult") html = viewQResult(r.id);
+      else if (r.view === "interview") html = viewInterview(r.tab);
+      else if (r.view === "linkedin") html = viewLinkedin();
+      else if (r.view === "jobs") html = viewJobs();
+      else html = viewHome();
+      root.innerHTML = html;
+      bind();
+    }
+
+    function bind() {
+      document.querySelectorAll("[data-go]").forEach(el => {
+        el.addEventListener("click", () => {
+          const g = el.getAttribute("data-go");
+          if (g && g.startsWith("#/quiz/") && g.endsWith("/0")) {
+            const id = g.split("/")[2];
+            quizPick[id] = [];
+          }
+          go(g);
+        });
+      });
+      const nm = document.getElementById("nm");
+      const start = document.getElementById("startBtn");
+      if (start && nm) {
+        const kick = () => {
+          const name = nm.value.trim();
+          if (!name) { nm.focus(); return; }
+          state.name = name.slice(0, 40);
+          save(state);
+          go("#/home");
+        };
+        start.addEventListener("click", kick);
+        nm.addEventListener("keydown", e => { if (e.key === "Enter") kick(); });
+        setTimeout(() => nm.focus(), 200);
+      }
+      const lo = document.getElementById("logout");
+      if (lo) lo.addEventListener("click", () => {
+        state = { name: "", done: {}, quiz: {} };
+        save(state);
+        go("#/");
+        render();
+      });
+      const mark = document.getElementById("markDone");
+      if (mark) {
+        const id = parse().id;
+        mark.addEventListener("click", () => {
+          state.done[id] = !state.done[id];
+          save(state);
+          render();
+        });
+      }
+      document.querySelectorAll("[data-pick]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const r = parse();
+          quizPick[r.id] = quizPick[r.id] || [];
+          quizPick[r.id][r.qi] = Number(btn.getAttribute("data-pick"));
+          render();
+        });
+      });
+      const next = document.getElementById("nextQ");
+      if (next) next.addEventListener("click", () => {
+        const r = parse();
+        go("#/quiz/" + r.id + "/" + (r.qi + 1));
+      });
+      const retry = document.getElementById("retry");
+      if (retry) retry.addEventListener("click", () => {
+        const r = parse();
+        quizPick[r.id] = [];
+      });
+    }
+
+    window.addEventListener("hashchange", render);
+    window.addEventListener("resize", () => {
+      /* keep phone height correct on mobile URL bar show/hide */
+    });
+    render();
+  })();
+  </script>
+</body>
+</html>
