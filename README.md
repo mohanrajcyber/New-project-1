@@ -1,10 +1,13 @@
 # EasyCS — Auxilium College BSc Computer Science Helper
 
-A **single-file** phone app for Auxilium College B.Sc. Computer Science students.
+A **single-file** app for Auxilium College B.Sc. Computer Science students.
 Open `index.html` in a browser. No install, no backend.
 
-On a **phone**, it fills the screen like a real app (bottom tabs, large tap targets).
-On a **laptop**, it shows inside a phone frame so you can check the mobile layout.
+**Both layouts are included:**
+- **Phone** — full-screen app on a mobile (bottom tabs). On a laptop you can also preview the phone frame.
+- **Windows** — full window layout with a left sidebar, wide cards, and more space.
+
+On a computer, use the **Phone / Windows** buttons at the top-right to switch. Phones always use the phone layout.
 
 ## What is inside
 - **Learning path** — Year 1 → Year 3, topic notes in simple English, short quiz per C and DS topic
