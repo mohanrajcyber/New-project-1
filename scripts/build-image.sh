@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 # Build an AahaOS bootable initramfs + fetch the Linux kernel for QEMU.
+# Usage: build-image.sh [arch] [variant]
+#   variant: core (default) or net
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ARCH="${1:-x86_64}"
+VARIANT="${2:-${AAHA_VARIANT:-core}}"
 CFG="$ROOT/os/configs/${ARCH}.mk"
-STAGING="$ROOT/build/${ARCH}/rootfs"
-OUT_DIR="$ROOT/images/${ARCH}"
+STAGING="$ROOT/build/${ARCH}-${VARIANT}/rootfs"
+if [[ "$VARIANT" == "core" ]]; then
+    OUT_DIR="$ROOT/images/${ARCH}"
+else
+    OUT_DIR="$ROOT/images/${ARCH}-${VARIANT}"
+fi
 INITRD="$OUT_DIR/initramfs.cpio.gz"
 VERSION="$(tr -d '[:space:]' < "$ROOT/os/VERSION")"
 
@@ -14,8 +21,12 @@ if [[ ! -f "$CFG" ]]; then
     echo "unknown arch: $ARCH" >&2
     exit 2
 fi
+if [[ "$VARIANT" != "core" && "$VARIANT" != "net" ]]; then
+    echo "unknown variant: $VARIANT (core|net)" >&2
+    exit 2
+fi
 
-echo "== AahaOS ${VERSION} image (${ARCH})"
+echo "== AahaOS ${VERSION} ${VARIANT} image (${ARCH})"
 
 "$ROOT/scripts/fetch-kernel.sh" "$ARCH"
 "$ROOT/scripts/fetch-busybox.sh" "$ARCH"
@@ -23,27 +34,59 @@ echo "== AahaOS ${VERSION} image (${ARCH})"
 rm -rf "$STAGING"
 mkdir -p "$STAGING"/{bin,sbin,usr/bin,usr/sbin,etc/aaha,proc,sys,dev,tmp,run,root,home/aaha}
 
-# BusyBox + common applets we actually use.
 cp -f "$ROOT/build/${ARCH}/busybox" "$STAGING/bin/busybox"
 chmod 0755 "$STAGING/bin/busybox"
 applets=(
     sh ash ls cat echo printf pwd mkdir mount umount hostname
     uname dmesg sleep reboot poweroff halt clear cp mv rm ln
-    chmod chown cat grep sed awk head tail wc ps kill
+    chmod chown grep sed awk head tail wc ps kill
     ip ifconfig lsmod
 )
+if [[ "$VARIANT" == "net" ]]; then
+    applets+=(udhcpc ping route wget)
+fi
 for a in "${applets[@]}"; do
     ln -sf busybox "$STAGING/bin/$a"
 done
 ln -sf ../bin/busybox "$STAGING/sbin/reboot"
 ln -sf ../bin/busybox "$STAGING/sbin/poweroff"
 ln -sf ../bin/busybox "$STAGING/sbin/halt"
+if [[ "$VARIANT" == "net" ]]; then
+    ln -sf ../bin/busybox "$STAGING/sbin/udhcpc"
+fi
 
-# Overlay identity files.
 cp -a "$ROOT/os/rootfs-overlay/." "$STAGING/"
+if [[ -d "$ROOT/os/variants/${VARIANT}" ]]; then
+    cp -a "$ROOT/os/variants/${VARIANT}/." "$STAGING/"
+fi
 printf '%s\n' "$VERSION" > "$STAGING/etc/aaha/version"
+printf '%s\n' "$VARIANT" > "$STAGING/etc/aaha/variant"
 
-# Init: prefer a static C binary on the host arch; otherwise portable ash.
+pretty="AahaOS ${VERSION} (${VARIANT^})"
+# portable title-case for core/net
+case "$VARIANT" in
+    core) pretty="AahaOS ${VERSION} (Core)" ;;
+    net) pretty="AahaOS ${VERSION} (Net)" ;;
+esac
+sed -i \
+    -e "s/^VERSION=.*/VERSION=\"${VERSION}\"/" \
+    -e "s/^VERSION_ID=.*/VERSION_ID=${VERSION}/" \
+    -e "s/^PRETTY_NAME=.*/PRETTY_NAME=\"${pretty}\"/" \
+    -e "s/^VARIANT=.*/VARIANT=\"${VARIANT^}\"/" \
+    -e "s/^VARIANT_ID=.*/VARIANT_ID=${VARIANT}/" \
+    -e "s/^IMAGE_VERSION=.*/IMAGE_VERSION=${VERSION}/" \
+    "$STAGING/etc/os-release"
+# VARIANT^ may not work on bash < 4; rewrite pretty lines already set.
+if [[ "$VARIANT" == "core" ]]; then
+    sed -i 's/^VARIANT=.*/VARIANT="Core"/; s/^PRETTY_NAME=.*/PRETTY_NAME="AahaOS '"${VERSION}"' (Core)"/' "$STAGING/etc/os-release"
+else
+    sed -i 's/^VARIANT=.*/VARIANT="Net"/; s/^PRETTY_NAME=.*/PRETTY_NAME="AahaOS '"${VERSION}"' (Net)"/' "$STAGING/etc/os-release"
+fi
+
+if [[ "$VARIANT" == "net" ]]; then
+    chmod 0755 "$STAGING/usr/share/udhcpc/default.script" 2>/dev/null || true
+fi
+
 if [[ "$ARCH" == "$(uname -m)" ]]; then
     echo "-- compiling aaha-init and aaha CLI (static)"
     gcc -static -Os -Wall -Wextra -o "$STAGING/sbin/init" "$ROOT/os/init.c"
@@ -57,37 +100,48 @@ else
     chmod 0755 "$STAGING/usr/bin/aaha"
 fi
 
-# Make sure init is executable.
 chmod 0755 "$STAGING/sbin/init"
 ln -sf ../sbin/init "$STAGING/bin/init"
 
-# Manifest consumed by PocketHost (image path contract).
 mkdir -p "$STAGING/usr/share/aaha"
 cat > "$STAGING/usr/share/aaha/manifest.json" <<EOF
 {
   "os": "AahaOS",
   "version": "${VERSION}",
   "arch": "${ARCH}",
+  "variant": "${VARIANT}",
   "kind": "embedded-linux",
   "hostname": "aaha",
   "root": "initramfs",
-  "not": ["windows", "vmware", "generic-iso", "from-scratch-kernel"]
+  "not": ["windows", "hypervisor-clone", "generic-iso", "from-scratch-kernel"]
 }
 EOF
 
-# Pack initramfs (newc). Device nodes are created by init via devtmpfs.
 mkdir -p "$OUT_DIR"
+# Reuse the already-fetched kernel for this arch.
+if [[ ! -f "$OUT_DIR/vmlinuz" ]]; then
+    if [[ -f "$ROOT/images/${ARCH}/vmlinuz" ]]; then
+        ln -f "$ROOT/images/${ARCH}/vmlinuz" "$OUT_DIR/vmlinuz" 2>/dev/null \
+            || cp -f "$ROOT/images/${ARCH}/vmlinuz" "$OUT_DIR/vmlinuz"
+    else
+        "$ROOT/scripts/fetch-kernel.sh" "$ARCH"
+        if [[ "$OUT_DIR" != "$ROOT/images/${ARCH}" ]]; then
+            cp -f "$ROOT/images/${ARCH}/vmlinuz" "$OUT_DIR/vmlinuz"
+        fi
+    fi
+fi
+
 (
     cd "$STAGING"
     find . -print0 | cpio --null --create --format=newc --owner=0:0
 ) | gzip -9 > "$INITRD"
 
-# Host-side manifest next to the image.
 cat > "$OUT_DIR/manifest.json" <<EOF
 {
   "os": "AahaOS",
   "version": "${VERSION}",
   "arch": "${ARCH}",
+  "variant": "${VARIANT}",
   "kernel": "vmlinuz",
   "initramfs": "initramfs.cpio.gz",
   "kind": "embedded-linux",
@@ -101,4 +155,4 @@ echo "  $OUT_DIR/vmlinuz"
 echo "  $INITRD ($(du -h "$INITRD" | awk '{print $1}'))"
 echo "  $OUT_DIR/manifest.json"
 echo
-echo "run:  make run ARCH=${ARCH}"
+echo "run:  make run ARCH=${ARCH} VARIANT=${VARIANT}"

@@ -1,18 +1,17 @@
 NAME=AahaOS
 ID=aahaos
 ID_LIKE=embedded
-VERSION="0.1.0"
-VERSION_ID=0.1.0
-PRETTY_NAME="AahaOS 0.1 (Pocket)"
-VARIANT="Embedded guest"
-VARIANT_ID=pocket
+VERSION="0.2.0"
+VERSION_ID=0.2.0
+PRETTY_NAME="AahaOS 0.2 (Core)"
+VARIANT="Core"
+VARIANT_ID=core
 ANSI_COLOR="1;36"
 HOME_URL="https://github.com/mohanrajcyber/New-project-1"
 SUPPORT_URL="https://github.com/mohanrajcyber/New-project-1"
 BUG_REPORT_URL="https://github.com/mohanrajcyber/New-project-1/issues"
-CPE_NAME="cpe:/o:aahaos:aahaos:0.1.0"
-PRIVACY_POLICY_URL=""
-BUILD_ID=pocket-v1
+CPE_NAME="cpe:/o:aahaos:aahaos:0.2.0"
+BUILD_ID=pocket-v2
 IMAGE_ID=aahaos-initramfs
-IMAGE_VERSION=0.1.0
-# Honest identity: custom userspace + Linux kernel. Not VMware. Not Windows.
+IMAGE_VERSION=0.2.0
+# Honest identity: custom userspace + Linux kernel. Not a hypervisor brand. Not Windows.

@@ -1,38 +1,49 @@
 # AahaOS + PocketHost
-# Guest image: custom embedded Linux. Host UI: PocketHost (not VMware).
+# Guest image: custom embedded Linux. Host UI: PocketHost.
 
 ARCH ?= x86_64
-.PHONY: image run test-boot image-aarch64 run-aarch64 android help clean
+VARIANT ?= core
+.PHONY: image run test test-boot image-aarch64 run-aarch64 image-net test-net android help clean
 
 help:
 	@echo "AahaOS (guest) + PocketHost (host UI)"
 	@echo
-	@echo "  make image            build x86_64 bootable image"
+	@echo "  make image            build $(ARCH) $(VARIANT) bootable image"
 	@echo "  make run              boot AahaOS in QEMU (serial)"
-	@echo "  make test-boot        headless serial proof"
-	@echo "  make image-aarch64    build phone-class image config"
-	@echo "  make run-aarch64      boot aarch64 under TCG (slow)"
-	@echo "  make android          print how to open the Gradle project"
-	@echo "  make clean            remove build/ and images/"
+	@echo "  make test             banner grep: x86_64 + aarch64 + Net"
+	@echo "  make test-boot        headless serial proof (one arch)"
+	@echo "  make image-aarch64    phone-class Core image"
+	@echo "  make image-net        AahaOS Net (DHCP applets) for x86_64"
+	@echo "  make android          how to open the Gradle project"
+	@echo "  make clean            remove build/ and generated images"
 
 image:
-	./scripts/build-image.sh $(ARCH)
+	./scripts/build-image.sh $(ARCH) $(VARIANT)
 
 run: image
-	./scripts/run-qemu.sh $(ARCH)
+	./scripts/run-qemu.sh $(ARCH) $(VARIANT)
+
+test:
+	./scripts/test.sh
 
 test-boot: image
-	./scripts/test-boot.sh $(ARCH)
+	./scripts/test-boot.sh $(ARCH) $(VARIANT)
 
 image-aarch64:
-	./scripts/build-image.sh aarch64
+	./scripts/build-image.sh aarch64 core
 
 run-aarch64: image-aarch64
-	./scripts/run-qemu.sh aarch64
+	./scripts/run-qemu.sh aarch64 core
+
+image-net:
+	./scripts/build-image.sh x86_64 net
+
+test-net: image-net
+	./scripts/test-boot.sh x86_64 net
 
 android:
 	@echo "Open android/pockethost in Android Studio."
 	@echo "If the Android SDK is installed:  cd android/pockethost && ./gradlew :app:assembleDebug"
 
 clean:
-	rm -rf build images
+	rm -rf build images/*/vmlinuz images/*/initramfs.cpio.gz images/*/manifest.json images/*-net

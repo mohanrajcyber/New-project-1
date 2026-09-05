@@ -3,5 +3,6 @@
 
   ஆஹா! இது நம்ம OS. ரெடி.
 
-  Demo notes: no default password, no sshd, no exploit toys.
+  Try: aaha help   aaha ident   aaha mem   aaha net
+  Demo: no password, no sshd, no exploit toys.
   If you needed a password for this VM, that would be a bug.

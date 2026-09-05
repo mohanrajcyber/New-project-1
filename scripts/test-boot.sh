@@ -4,10 +4,17 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ARCH="${1:-x86_64}"
+VARIANT="${2:-${AAHA_VARIANT:-core}}"
 CFG="$ROOT/os/configs/${ARCH}.mk"
-IMG="$ROOT/images/${ARCH}"
-LOG="$ROOT/build/${ARCH}/serial-boot.log"
-PIDFILE="$ROOT/build/${ARCH}/qemu.pid"
+if [[ "$VARIANT" == "core" ]]; then
+    IMG="$ROOT/images/${ARCH}"
+    BUILD="$ROOT/build/${ARCH}"
+else
+    IMG="$ROOT/images/${ARCH}-${VARIANT}"
+    BUILD="$ROOT/build/${ARCH}-${VARIANT}"
+fi
+LOG="$BUILD/serial-boot.log"
+PIDFILE="$BUILD/qemu.pid"
 
 if [[ ! -f "$CFG" ]]; then
     echo "unknown arch: $ARCH" >&2
@@ -15,13 +22,13 @@ if [[ ! -f "$CFG" ]]; then
 fi
 if [[ ! -f "$IMG/vmlinuz" || ! -f "$IMG/initramfs.cpio.gz" ]]; then
     echo "building image first..."
-    "$ROOT/scripts/build-image.sh" "$ARCH"
+    "$ROOT/scripts/build-image.sh" "$ARCH" "$VARIANT"
 fi
 
 # shellcheck disable=SC1090
 source <(sed -n 's/^[[:space:]]*\([A-Z0-9_]*\) := \(.*\)$/\1="\2"/p' "$CFG")
 
-mkdir -p "$ROOT/build/${ARCH}"
+mkdir -p "$BUILD"
 rm -f "$LOG" "$PIDFILE"
 
 extra=()
@@ -29,7 +36,7 @@ if [[ "$ARCH" == "aarch64" ]]; then
     extra+=(-cpu "${QEMU_CPU}")
 fi
 
-echo "== serial boot test (${ARCH})"
+echo "== serial boot test (${ARCH} ${VARIANT})"
 "$QEMU" \
     -machine "$QEMU_MACHINE" \
     "${extra[@]}" \
@@ -54,7 +61,11 @@ trap cleanup EXIT
 
 ok=0
 for _ in $(seq 1 60); do
-    if [[ -f "$LOG" ]] && grep -q "AahaOS" "$LOG" && grep -q "நம்ம OS" "$LOG" && grep -q "AahaOS status" "$LOG"; then
+    if [[ -f "$LOG" ]] \
+        && grep -q "AahaOS" "$LOG" \
+        && grep -q "நம்ம OS" "$LOG" \
+        && grep -q "AahaOS identity" "$LOG" \
+        && grep -q "variant" "$LOG"; then
         ok=1
         break
     fi
@@ -70,8 +81,8 @@ fi
 echo "--------------------"
 
 if [[ "$ok" -ne 1 ]]; then
-    echo "FAIL: AahaOS banner not seen on serial within 60s" >&2
+    echo "FAIL: AahaOS banner/identity not seen on serial within 60s" >&2
     exit 1
 fi
 
-echo "PASS: AahaOS banner + Tamil MOTD on ${ARCH} serial"
+echo "PASS: AahaOS banner + Tamil MOTD + ident on ${ARCH} ${VARIANT} serial"

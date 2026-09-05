@@ -2,83 +2,80 @@
 
 One-tap boot of **our** guest OS. Not a Limbo / Vectras / Andronix wrapper. Not an ISO wizard.
 
-**AahaOS** is the guest: a custom embedded Linux (our init, hostname `aaha`, MOTD, `aaha` CLI, our initramfs).
+**AahaOS** — custom embedded Linux: our init, hostname `aaha`, MOTD, `aaha` CLI, our initramfs.
 
-**PocketHost** is the Android host UI. It is **not** VMware.
+**PocketHost** — Android host UI. Not a hypervisor brand.
+
+Short landing: [docs/LANDING.md](docs/LANDING.md)
 
 ## What this is
 
 - Our branding, `/sbin/init`, `/etc/os-release` (`NAME=AahaOS`), prompt, tools.
-- A real **x86_64** image that boots in QEMU (serial) on Linux. **aarch64** also boots under TCG (phone-class later).
-- PocketHost: AahaOS card → status **Ready** → **Start**. No browse-ISO.
+- Real **x86_64** and **aarch64** images that boot in QEMU (serial).
+- Two of **our** variants (both build): **Core** (console) and **Net** (Core + DHCP/ping applets).
+- PocketHost: AahaOS card → **Ready · engine off** → **Start**. Engine tab = Termux sheet. No browse-ISO.
 
 ## What this is not
 
 - Not a from-scratch production kernel. The kernel is Linux (GPL-2.0). We write userspace + image.
-- Not VMware, not Windows, not a pirated ISO shop.
+- Not a hypervisor clone, not Windows, not a pirated ISO shop.
 - Not “download Alpine/Debian yourself and install it.”
-- PocketHost v1 does **not** claim the VM is running. The JNI/QEMU-on-phone engine is the next step.
+- PocketHost does **not** claim the VM is running. JNI/QEMU-on-phone is next.
 
 ## Proof on a Linux PC
 
-Needs: `qemu-system-x86`, `busybox-static`, `gcc`, `cpio`, `gzip`, `curl`.
+Needs: `qemu-system-x86`, `qemu-system-aarch64`, `busybox-static`, `gcc`, `cpio`, `gzip`, `curl`.
 
 ```bash
-make image      # x86_64 kernel + our initramfs
-make test-boot  # headless serial; must print AahaOS + Tamil line
-make run        # interactive serial console (Ctrl-A x to quit)
+make test       # x86_64 Core + aarch64 Core + x86_64 Net (banner grep)
+make run        # interactive serial (Ctrl-A x)
 ```
 
 Inside the guest:
 
 ```text
 aaha status
+aaha ident
+aaha mem
 aaha net
 aaha lock
+aaha help
 ```
 
-No password. No sshd. Console only. Root is an ephemeral initramfs (read-only story).
-
-Phone-class image (TCG on a PC is slow):
+No password. No sshd. Console only. Ephemeral initramfs.
 
 ```bash
 make image-aarch64
-make run-aarch64
+make image-net
 ```
 
 ## PocketHost (Android)
 
-Folder: `android/pockethost`  
-Package: `app.pockethost`  ·  minSdk 26
+Folder: `android/pockethost` · package `app.pockethost` · minSdk 26
 
-1. Open that folder in Android Studio.
-2. You should see one card: **AahaOS / Ready / Start**.
-3. **Start** tells the truth: image is Ready, in-app QEMU is not wired yet.
-4. Settings: RAM + bundled disk defaults only.
+Tabs: **AahaOS** · **Snaps** (empty, honest) · **Engine** (Termux commands + copy) · **More** (RAM/disk defaults).
 
-Image path contract: `android/pockethost/app/src/main/assets/aahaos/`  
-(`manifest.json` + `IMAGE_CONTRACT.txt`). Built images live in `images/<arch>/` after `make image`.
+Image contract: `android/pockethost/app/src/main/assets/aahaos/`
 
-Gradle wrapper is valid (`./gradlew` downloads Gradle + AGP). This environment has no Android SDK, so `assembleDebug` stops at “SDK location not found”. On a machine with Android Studio / SDK:
+Gradle wrapper is valid. This environment has no Android SDK, so `assembleDebug` stops at “SDK location not found”. With Android Studio:
 
 ```bash
 cd android/pockethost && ./gradlew :app:assembleDebug
 ```
 
-## Phone-only tester (later)
+## Phone-only tester
 
-1. Install the PocketHost APK (sideload when CI/Studio builds it). You will see Ready + Start.
-2. Start will **not** lie that AahaOS is running until an engine exists.
-3. Next engine options (pick one later): Termux + `qemu-system-aarch64` pointed at our `vmlinuz` + `initramfs.cpio.gz`, or a JNI QEMU module that reads the same contract.
-4. Do not download a random distro ISO.
+See [docs/PHONE.md](docs/PHONE.md). Sideload APK → Ready + engine off. Start stays honest. Next: Termux QEMU on our aarch64 image, or JNI.
 
 ## Tree
 
 ```text
-os/                 AahaOS userspace (init, aaha CLI, overlay)
-scripts/            fetch kernel, build initramfs, run/test QEMU
-images/             generated (gitignored)
+os/                 AahaOS userspace + Core/Net overlays
+scripts/            fetch kernel, build, run, test
 android/pockethost  one-tap host UI
+docs/LANDING.md     short mobile read
 ```
 
-Demo login: **none**. If a write-up says `aaha`/`aaha`, that is only a label — there is no password prompt in v1.
+LICENSE: MIT for our userspace and PocketHost. Linux kernel binary fetched at build time is GPL-2.0.
+
+Demo login: **none**.

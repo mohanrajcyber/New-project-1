@@ -1,7 +1,7 @@
 # Phone tester (short)
 
-1. Sideload PocketHost APK when you have one (`android/pockethost`).
-2. Open app → **AahaOS** card → **Ready** → **Start**.
-3. Start will say the engine is not connected. That is honest v1.
-4. Later: Termux + QEMU using `images/aarch64/vmlinuz` + `initramfs.cpio.gz`, or JNI.
+1. Sideload PocketHost (`android/pockethost`) when you have an APK.
+2. **AahaOS** tab: status **Ready** + **engine off**. Start does **not** claim the guest is running.
+3. **Engine** tab: Termux command sheet + copy. Point QEMU at **our** `vmlinuz` + `initramfs.cpio.gz` (from `make image-aarch64`).
+4. **Snaps** tab: empty on purpose — no guest disk yet, no fake restore points.
 5. Do not download a random ISO.

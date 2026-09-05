@@ -2,7 +2,9 @@ package app.pockethost.ui
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Memory
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -17,6 +19,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.pockethost.engine.BundledImageEngine
+import app.pockethost.ui.theme.Card
 import app.pockethost.ui.theme.Ink
 
 @Composable
@@ -25,21 +28,40 @@ fun PocketHostApp(engine: BundledImageEngine) {
     val back by nav.currentBackStackEntryAsState()
     val route = back?.destination?.route ?: "home"
 
+    fun go(dest: String) {
+        nav.navigate(dest) {
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
     Scaffold(
         containerColor = Ink,
         bottomBar = {
-            NavigationBar {
+            NavigationBar(containerColor = Card) {
                 NavigationBarItem(
                     selected = route == "home",
-                    onClick = { nav.navigate("home") { launchSingleTop = true } },
+                    onClick = { go("home") },
                     icon = { Icon(Icons.Outlined.Memory, contentDescription = "AahaOS") },
                     label = { Text("AahaOS") },
                 )
                 NavigationBarItem(
+                    selected = route == "snapshots",
+                    onClick = { go("snapshots") },
+                    icon = { Icon(Icons.Outlined.PhotoLibrary, contentDescription = "Snapshots") },
+                    label = { Text("Snaps") },
+                )
+                NavigationBarItem(
+                    selected = route == "engine",
+                    onClick = { go("engine") },
+                    icon = { Icon(Icons.Outlined.Bolt, contentDescription = "Engine") },
+                    label = { Text("Engine") },
+                )
+                NavigationBarItem(
                     selected = route == "settings",
-                    onClick = { nav.navigate("settings") { launchSingleTop = true } },
+                    onClick = { go("settings") },
                     icon = { Icon(Icons.Outlined.Settings, contentDescription = "Settings") },
-                    label = { Text("Settings") },
+                    label = { Text("More") },
                 )
             }
         },
@@ -49,8 +71,10 @@ fun PocketHostApp(engine: BundledImageEngine) {
             startDestination = "home",
             modifier = Modifier.padding(padding),
         ) {
-            composable("home") { HomeScreen(engine) }
-            composable("settings") { SettingsScreen() }
+            composable("home") { HomeScreen(engine, onOpenEngine = { go("engine") }) }
+            composable("snapshots") { SnapshotsScreen(engine) }
+            composable("engine") { EngineScreen(engine) }
+            composable("settings") { SettingsScreen(engine) }
         }
     }
 }

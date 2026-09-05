@@ -1,0 +1,19 @@
+#!/bin/sh
+# AahaOS Net — busybox udhcpc hook. Local DHCP only. No scanner.
+# shellcheck disable=SC2154
+case "$1" in
+    deconfig)
+        ip addr flush dev "$interface" 2>/dev/null || ifconfig "$interface" 0.0.0.0 2>/dev/null
+        ;;
+    bound|renew)
+        if command -v ip >/dev/null 2>&1; then
+            ip addr flush dev "$interface" 2>/dev/null
+            ip addr add "$ip/$mask" dev "$interface" 2>/dev/null
+            [ -n "$router" ] && ip route add default via "$router" dev "$interface" 2>/dev/null
+        else
+            ifconfig "$interface" "$ip" netmask "$subnet" 2>/dev/null
+        fi
+        ;;
+    *) ;;
+esac
+exit 0

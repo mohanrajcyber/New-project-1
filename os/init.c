@@ -90,6 +90,17 @@ static void print_banner(void)
     fputs("\n", stdout);
     printf("  AahaOS %s  —  custom embedded Linux guest\n", version);
     printf("  hostname : %s\n", HOSTNAME);
+    {
+        char variant[32] = "core";
+        FILE *varf = fopen("/etc/aaha/variant", "r");
+        if (varf) {
+            if (fgets(variant, sizeof(variant), varf)) {
+                variant[strcspn(variant, "\r\n")] = '\0';
+            }
+            fclose(varf);
+        }
+        printf("  variant  : %s\n", variant);
+    }
     if (uname(&uts) == 0) {
         printf("  kernel   : %s %s\n", uts.sysname, uts.release);
         printf("  machine  : %s\n", uts.machine);
@@ -218,7 +229,7 @@ int main(int argc, char **argv)
     if (access("/usr/bin/aaha", X_OK) == 0) {
         pid_t helper = fork();
         if (helper == 0) {
-            execl("/usr/bin/aaha", "aaha", "status", (char *)NULL);
+            execl("/usr/bin/aaha", "aaha", "ident", (char *)NULL);
             _exit(127);
         }
         if (helper > 0) {

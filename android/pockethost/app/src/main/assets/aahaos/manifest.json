@@ -1,10 +1,11 @@
 {
   "os": "AahaOS",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "variant": "core",
   "kind": "embedded-linux",
   "hostname": "aaha",
   "status": "ready",
   "engine": "placeholder",
   "imageHint": "files/aahaos/<arch>/vmlinuz + initramfs.cpio.gz",
-  "not": ["windows", "vmware", "generic-iso", "from-scratch-kernel"]
+  "not": ["windows", "hypervisor-clone", "generic-iso", "from-scratch-kernel"]
 }

@@ -35,8 +35,13 @@ VER="0.1.0"
 if [ -f /etc/aaha/version ]; then
     VER=$(cat /etc/aaha/version)
 fi
+VARIANT="core"
+if [ -f /etc/aaha/variant ]; then
+    VARIANT=$(cat /etc/aaha/variant)
+fi
 echo "  AahaOS $VER  —  custom embedded Linux guest"
 echo "  hostname : $HOSTNAME"
+echo "  variant  : $VARIANT"
 echo "  kernel   : $(uname -s) $(uname -r)"
 echo "  machine  : $(uname -m)"
 echo "  root     : initramfs (ephemeral, treat as read-only story)"
@@ -49,7 +54,7 @@ echo
 echo "  Type  aaha help  —  or just use the shell."
 echo
 if [ -x /usr/bin/aaha ]; then
-    /usr/bin/aaha status
+    /usr/bin/aaha ident
     echo
 fi
 

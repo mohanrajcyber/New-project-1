@@ -1,9 +1,8 @@
 /*
- * aaha — tiny operator CLI for AahaOS.
+ * aaha — AahaOS operator CLI.
  *
- * Commands: status, net, lock, help
- * "lock" is a documented stub (read-only-root reminder), not a security
- * control and not a backdoor.
+ * Real in-initramfs commands: status, ident, mem, net, help.
+ * lock reports mount flags and is NOT a security control.
  */
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -17,39 +16,64 @@ static void usage(void)
           "\n"
           "Usage: aaha <command>\n"
           "\n"
-          "  status   OS identity, kernel, hostname\n"
-          "  net      local interfaces (no scanner, no exploit tools)\n"
-          "  lock     read-only-root reminder (v1 stub)\n"
+          "  status   short OS identity\n"
+          "  ident    full identity (variant, os-release, machine)\n"
+          "  mem      memory from /proc/meminfo (real)\n"
+          "  net      local interfaces the kernel already exposes\n"
+          "  lock     read-only-root reminder + current mount flags\n"
           "  help     this text\n",
           stdout);
+}
+
+static void print_os_keys(void)
+{
+    FILE *fp = fopen("/etc/os-release", "r");
+    char line[256];
+    if (!fp) {
+        return;
+    }
+    while (fgets(line, sizeof(line), fp)) {
+        if (strncmp(line, "PRETTY_NAME=", 12) == 0 ||
+            strncmp(line, "VERSION_ID=", 11) == 0 ||
+            strncmp(line, "ID=", 3) == 0 ||
+            strncmp(line, "VARIANT=", 8) == 0 ||
+            strncmp(line, "VARIANT_ID=", 11) == 0) {
+            fputs(line, stdout);
+        }
+    }
+    fclose(fp);
+}
+
+static void read_trim(const char *path, char *out, size_t n, const char *fallback)
+{
+    FILE *fp = fopen(path, "r");
+    if (!fp) {
+        snprintf(out, n, "%s", fallback);
+        return;
+    }
+    if (!fgets(out, (int)n, fp)) {
+        snprintf(out, n, "%s", fallback);
+    }
+    fclose(fp);
+    out[strcspn(out, "\r\n")] = '\0';
 }
 
 static void cmd_status(void)
 {
     struct utsname uts;
     char host[64] = "?";
-    FILE *fp;
+    char variant[32] = "core";
 
     gethostname(host, sizeof(host));
+    read_trim("/etc/aaha/variant", variant, sizeof(variant), "core");
+
     fputs("AahaOS status\n", stdout);
     fputs("-------------\n", stdout);
     fputs("os        : AahaOS (custom embedded Linux)\n", stdout);
-    fputs("not       : VMware, Windows, Alpine installer, from-scratch kernel\n",
+    fputs("not       : hypervisor clone, Windows, distro installer, from-scratch kernel\n",
           stdout);
-
-    fp = fopen("/etc/os-release", "r");
-    if (fp) {
-        char line[256];
-        while (fgets(line, sizeof(line), fp)) {
-            if (strncmp(line, "PRETTY_NAME=", 12) == 0 ||
-                strncmp(line, "VERSION_ID=", 11) == 0 ||
-                strncmp(line, "ID=", 3) == 0) {
-                fputs(line, stdout);
-            }
-        }
-        fclose(fp);
-    }
-
+    print_os_keys();
+    printf("variant   : %s\n", variant);
     printf("hostname  : %s\n", host);
     if (uname(&uts) == 0) {
         printf("kernel    : %s %s (%s)\n", uts.sysname, uts.release,
@@ -60,37 +84,139 @@ static void cmd_status(void)
     fputs("auth      : no password login; console only.\n", stdout);
 }
 
+static void cmd_ident(void)
+{
+    struct utsname uts;
+    char host[64] = "?";
+    char variant[32] = "core";
+    char version[32] = "0.2.0";
+
+    gethostname(host, sizeof(host));
+    read_trim("/etc/aaha/variant", variant, sizeof(variant), "core");
+    read_trim("/etc/aaha/version", version, sizeof(version), "0.2.0");
+
+    fputs("AahaOS identity\n", stdout);
+    fputs("---------------\n", stdout);
+    printf("product   : AahaOS %s\n", version);
+    printf("variant   : %s  (Core = console guest, Net = Core + DHCP applets)\n",
+           variant);
+    printf("hostname  : %s\n", host);
+    print_os_keys();
+    if (uname(&uts) == 0) {
+        printf("uname     : %s %s %s %s\n", uts.sysname, uts.release,
+               uts.version, uts.machine);
+    }
+    fputs("prompt    : aaha@aaha\n", stdout);
+    fputs("services  : none (no sshd, no getty login)\n", stdout);
+}
+
+static void cmd_mem(void)
+{
+    FILE *fp = fopen("/proc/meminfo", "r");
+    char line[256];
+    int shown = 0;
+
+    fputs("AahaOS mem\n", stdout);
+    fputs("----------\n", stdout);
+    if (!fp) {
+        fputs("no /proc/meminfo — proc not mounted?\n", stdout);
+        return;
+    }
+    while (fgets(line, sizeof(line), fp)) {
+        if (strncmp(line, "MemTotal:", 9) == 0 ||
+            strncmp(line, "MemFree:", 8) == 0 ||
+            strncmp(line, "MemAvailable:", 13) == 0 ||
+            strncmp(line, "Buffers:", 8) == 0 ||
+            strncmp(line, "Cached:", 7) == 0) {
+            fputs(line, stdout);
+            shown++;
+        }
+        if (shown >= 5) {
+            break;
+        }
+    }
+    fclose(fp);
+    fputs("Source: /proc/meminfo (this guest). Not a host leak tool.\n",
+          stdout);
+}
+
 static void cmd_net(void)
 {
+    FILE *fp;
+    char line[256];
+    char variant[32] = "core";
+
+    read_trim("/etc/aaha/variant", variant, sizeof(variant), "core");
+
     fputs("AahaOS net (local view)\n", stdout);
     fputs("-----------------------\n", stdout);
-    if (access("/proc/net/dev", R_OK) == 0) {
-        FILE *fp = fopen("/proc/net/dev", "r");
-        char line[256];
+    printf("variant   : %s\n", variant);
+
+    fp = fopen("/proc/net/dev", "r");
+    if (fp) {
+        while (fgets(line, sizeof(line), fp)) {
+            fputs(line, stdout);
+        }
+        fclose(fp);
+    } else {
+        fputs("no /proc/net/dev — proc not mounted?\n", stdout);
+    }
+
+    if (strcmp(variant, "net") == 0) {
+        fputs("\nIPv4 routes (/proc/net/route):\n", stdout);
+        fp = fopen("/proc/net/route", "r");
         if (fp) {
             while (fgets(line, sizeof(line), fp)) {
                 fputs(line, stdout);
             }
             fclose(fp);
+        } else {
+            fputs("(no /proc/net/route)\n", stdout);
         }
+        fputs("\nNet variant includes busybox udhcpc + ping. "
+              "No port scan, no exploit tools.\n",
+              stdout);
     } else {
-        fputs("no /proc/net/dev — proc not mounted?\n", stdout);
+        fputs("\nCore variant: interface list only. "
+              "AahaOS Net adds DHCP applets.\n",
+              stdout);
     }
-    fputs("\nThis command only lists what the kernel already exposes.\n",
+    fputs("This command only lists what the kernel already exposes.\n",
           stdout);
 }
 
 static void cmd_lock(void)
 {
-    fputs("aaha lock (v1 stub)\n", stdout);
-    fputs("-------------------\n", stdout);
-    fputs("AahaOS v1 boots an ephemeral initramfs. Treat the guest as\n",
+    FILE *fp = fopen("/proc/mounts", "r");
+    char line[256];
+    const char *flags = "(unknown)";
+
+    fputs("aaha lock\n", stdout);
+    fputs("---------\n", stdout);
+    fputs("Reminder: AahaOS v0.2 boots an ephemeral initramfs.\n", stdout);
+    fputs("Reboot loses /tmp. No disk unlock secret, no password, no sshd.\n",
           stdout);
-    fputs("read-only: reboot loses /tmp. There is no disk unlock secret,\n",
-          stdout);
-    fputs("no default password, and no remote lock service.\n", stdout);
-    fputs("\nNot armed. Not a backdoor. PocketHost will own persist later.\n",
-          stdout);
+    fputs("Not a backdoor. Not a security boundary.\n\n", stdout);
+
+    if (fp) {
+        while (fgets(line, sizeof(line), fp)) {
+            char src[64], tgt[64], fstype[64], opts[128];
+            if (sscanf(line, "%63s %63s %63s %127s", src, tgt, fstype, opts) ==
+                4) {
+                if (strcmp(tgt, "/") == 0) {
+                    flags = strstr(opts, "rw") ? "rw (initramfs writable until reboot)"
+                                               : "ro";
+                    printf("root mount: %s %s (%s) %s\n", src, tgt, fstype,
+                           flags);
+                    break;
+                }
+            }
+        }
+        fclose(fp);
+    } else {
+        fputs("root mount: (no /proc/mounts)\n", stdout);
+    }
+    fputs("PocketHost will own persist / snapshots later.\n", stdout);
 }
 
 int main(int argc, char **argv)
@@ -104,6 +230,14 @@ int main(int argc, char **argv)
     cmd = argv[1];
     if (strcmp(cmd, "status") == 0) {
         cmd_status();
+        return 0;
+    }
+    if (strcmp(cmd, "ident") == 0) {
+        cmd_ident();
+        return 0;
+    }
+    if (strcmp(cmd, "mem") == 0) {
+        cmd_mem();
         return 0;
     }
     if (strcmp(cmd, "net") == 0) {

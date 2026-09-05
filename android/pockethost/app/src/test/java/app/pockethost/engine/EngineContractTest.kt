@@ -18,4 +18,17 @@ class EngineContractTest {
         val result = EngineResult.Started("serial console attached")
         assertFalse(result.note.isBlank())
     }
+
+    @Test
+    fun readyEngineOffIsNotRunningLabel() {
+        assertEquals("ReadyEngineOff", HostStatus.ReadyEngineOff.name)
+        assertFalse(HostStatus.ReadyEngineOff == HostStatus.Running)
+    }
+
+    @Test
+    fun termuxBootIsOurImage() {
+        assertTrue(BundledImageEngine.TERMUX_BOOT.contains("aahaos"))
+        assertTrue(BundledImageEngine.TERMUX_BOOT.contains("rdinit=/sbin/init"))
+        assertFalse(BundledImageEngine.TERMUX_BOOT.contains("alpine.iso"))
+    }
 }
