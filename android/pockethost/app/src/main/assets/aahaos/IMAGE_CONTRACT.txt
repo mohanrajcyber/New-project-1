@@ -1,0 +1,23 @@
+PocketHost ↔ AahaOS image contract (v1)
+=======================================
+
+Guest: AahaOS (custom embedded Linux). Not an ISO wizard. Not VMware.
+
+On-device paths after the host copies a built image:
+
+  files/aahaos/manifest.json
+  files/aahaos/<arch>/vmlinuz
+  files/aahaos/<arch>/initramfs.cpio.gz
+
+<arch> is x86_64 (dev / QEMU on PC) or aarch64 (phones later).
+
+manifest.json fields:
+  os, version, arch, kind=embedded-linux
+  not: windows, vmware, generic-iso, from-scratch-kernel
+
+VmEngine reports Ready when this contract / bundled manifest is present.
+Ready does NOT mean QEMU is executing. Start() may return Unavailable
+until a real engine (Termux QEMU or JNI) is wired.
+
+Build the image on a Linux box:  make image
+Then copy images/x86_64/* next to this contract, or ship them as assets.

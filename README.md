@@ -1,47 +1,84 @@
-# EasyCS — Auxilium College BSc Computer Science Helper
+# AahaOS + PocketHost
 
-A **single-file** app for Auxilium College B.Sc. Computer Science students.
-Open `index.html` in a browser. No install, no backend.
+One-tap boot of **our** guest OS. Not a Limbo / Vectras / Andronix wrapper. Not an ISO wizard.
 
-**Both layouts are included:**
-- **Phone** — full-screen app on a mobile (bottom tabs). On a laptop you can also preview the phone frame.
-- **Windows** — full window layout with a left sidebar, wide cards, and more space.
+**AahaOS** is the guest: a custom embedded Linux (our init, hostname `aaha`, MOTD, `aaha` CLI, our initramfs).
 
-On a computer, use the **Phone / Windows** buttons at the top-right to switch. Phones always use the phone layout.
+**PocketHost** is the Android host UI. It is **not** VMware.
 
-## What is inside
-- **Learning path** — Year 1 → Year 3, topic notes in simple English, short quiz per C and DS topic
-- **Progress** — sign in with a name only; saved in this browser (`localStorage`)
-- **Interview prep** — technical + HR answers and tips
-- **LinkedIn guide** — 8 steps to build a profile
-- **Job guide** — company types and how freshers apply
+## What this is
 
-Full sample notes: **Programming in C** (Sem 1) and **Data Structures** (Sem 2).
-Other core papers have shorter plain-language notes so the path is not empty.
+- Our branding, `/sbin/init`, `/etc/os-release` (`NAME=AahaOS`), prompt, tools.
+- A real **x86_64** image that boots in QEMU (serial) on Linux. **aarch64** also boots under TCG (phone-class later).
+- PocketHost: AahaOS card → status **Ready** → **Start**. No browse-ISO.
 
-## How to run
-Open `index.html` on your phone (Files app / Chrome) or on a computer.
+## What this is not
 
-To share a link, use **GitHub Pages**:
-1. Push this repo
-2. Settings → Pages → Branch `main` → folder `/ (root)` → Save
-3. Share `https://<username>.github.io/<repo-name>/`
+- Not a from-scratch production kernel. The kernel is Linux (GPL-2.0). We write userspace + image.
+- Not VMware, not Windows, not a pirated ISO shop.
+- Not “download Alpine/Debian yourself and install it.”
+- PocketHost v1 does **not** claim the VM is running. The JNI/QEMU-on-phone engine is the next step.
 
-## File
-Everything is in one file on purpose (CSS + data + app logic):
+## Proof on a Linux PC
 
-```
-index.html    ← the whole EasyCS app
-README.md
+Needs: `qemu-system-x86`, `busybox-static`, `gcc`, `cpio`, `gzip`, `curl`.
+
+```bash
+make image      # x86_64 kernel + our initramfs
+make test-boot  # headless serial; must print AahaOS + Tamil line
+make run        # interactive serial console (Ctrl-A x to quit)
 ```
 
-There is no `css/` or `js/` folder. Edit `index.html` to add more topics.
+Inside the guest:
 
-## Add more notes
-Search for `const SUBJECTS` inside `index.html`. Each topic needs:
+```text
+aaha status
+aaha net
+aaha lock
+```
 
-- `id`, `title`, `summary`
-- `explain` (array of simple sentences)
-- `keyPoints` (quick revision lines)
+No password. No sshd. Console only. Root is an ephemeral initramfs (read-only story).
 
-Optional: add the same `id` under `const QUIZZES` with `{ q, a, c }` questions (`c` is the correct index, starting at 0).
+Phone-class image (TCG on a PC is slow):
+
+```bash
+make image-aarch64
+make run-aarch64
+```
+
+## PocketHost (Android)
+
+Folder: `android/pockethost`  
+Package: `app.pockethost`  ·  minSdk 26
+
+1. Open that folder in Android Studio.
+2. You should see one card: **AahaOS / Ready / Start**.
+3. **Start** tells the truth: image is Ready, in-app QEMU is not wired yet.
+4. Settings: RAM + bundled disk defaults only.
+
+Image path contract: `android/pockethost/app/src/main/assets/aahaos/`  
+(`manifest.json` + `IMAGE_CONTRACT.txt`). Built images live in `images/<arch>/` after `make image`.
+
+Gradle wrapper is valid (`./gradlew` downloads Gradle + AGP). This environment has no Android SDK, so `assembleDebug` stops at “SDK location not found”. On a machine with Android Studio / SDK:
+
+```bash
+cd android/pockethost && ./gradlew :app:assembleDebug
+```
+
+## Phone-only tester (later)
+
+1. Install the PocketHost APK (sideload when CI/Studio builds it). You will see Ready + Start.
+2. Start will **not** lie that AahaOS is running until an engine exists.
+3. Next engine options (pick one later): Termux + `qemu-system-aarch64` pointed at our `vmlinuz` + `initramfs.cpio.gz`, or a JNI QEMU module that reads the same contract.
+4. Do not download a random distro ISO.
+
+## Tree
+
+```text
+os/                 AahaOS userspace (init, aaha CLI, overlay)
+scripts/            fetch kernel, build initramfs, run/test QEMU
+images/             generated (gitignored)
+android/pockethost  one-tap host UI
+```
+
+Demo login: **none**. If a write-up says `aaha`/`aaha`, that is only a label — there is no password prompt in v1.

@@ -1,0 +1,10 @@
+{
+  "os": "AahaOS",
+  "version": "0.1.0",
+  "kind": "embedded-linux",
+  "hostname": "aaha",
+  "status": "ready",
+  "engine": "placeholder",
+  "imageHint": "files/aahaos/<arch>/vmlinuz + initramfs.cpio.gz",
+  "not": ["windows", "vmware", "generic-iso", "from-scratch-kernel"]
+}
