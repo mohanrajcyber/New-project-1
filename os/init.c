@@ -2,8 +2,8 @@
  * AahaOS PID 1 — custom userspace init (not a distro installer).
  *
  * Boots the embedded guest: mounts a minimal VFS, sets identity, prints
- * the AahaOS banner, then keeps a console shell alive. No password
- * login, no sshd, no remote services.
+ * the AahaOS banner, then keeps a console shell alive. Console login.
+ * Net/Lab start dropbear (blank password). Not a security boundary.
  *
  * License: MIT (this file). The Linux kernel you boot alongside is GPL-2.0.
  */
