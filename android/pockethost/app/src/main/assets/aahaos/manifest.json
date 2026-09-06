@@ -1,11 +1,12 @@
 {
   "os": "AahaOS",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "variant": "core",
   "kind": "embedded-linux",
   "hostname": "aaha",
   "status": "ready",
-  "engine": "placeholder",
-  "imageHint": "files/aahaos/<arch>/vmlinuz + initramfs.cpio.gz",
+  "engine": "termux-handoff",
+  "imageHint": "dist/aarch64/{core,net}/initramfs.cpio.gz + dist/aarch64/vmlinuz",
+  "termuxScript": "https://raw.githubusercontent.com/mohanrajcyber/New-project-1/main/scripts/termux-boot-aahaos.sh",
   "not": ["windows", "hypervisor-clone", "generic-iso", "from-scratch-kernel"]
 }

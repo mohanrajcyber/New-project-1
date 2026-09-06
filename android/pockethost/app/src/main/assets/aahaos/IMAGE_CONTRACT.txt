@@ -1,20 +1,28 @@
-PocketHost ↔ AahaOS image contract (v0.2)
+PocketHost ↔ AahaOS image contract (v0.3)
 ========================================
 
 Guest: AahaOS (custom embedded Linux). Not an ISO wizard.
 
-On-device paths after the host copies a built image:
+Published phone images (public repo):
+
+  dist/aarch64/vmlinuz
+  dist/aarch64/core/initramfs.cpio.gz
+  dist/aarch64/net/initramfs.cpio.gz
+
+On-device paths after Termux wget (or a future host copy):
 
   files/aahaos/manifest.json
-  files/aahaos/<arch>/vmlinuz
-  files/aahaos/<arch>/initramfs.cpio.gz
+  files/aahaos/aarch64/vmlinuz
+  files/aahaos/aarch64/initramfs.cpio.gz
 
-<arch> is x86_64 (PC QEMU) or aarch64 (phones).
 Variants (ours only): core | net
-  core = console guest
-  net  = core + busybox DHCP/ping applets
+  core = console guest, local-only (no virtio-net)
+  net  = core + virtio-net + busybox udhcpc/ping (QEMU user DHCP)
 
 VmEngine reports Ready when this contract / bundled manifest is present.
-Ready does NOT mean QEMU is executing.
+Ready does NOT mean QEMU is executing inside the APK.
+Start hands off to Termux. Status may be Handed off — never Running unless
+this process owns QEMU (it does not in v0.3).
 
-Build:  make image   or   make image-aarch64   or   make image-net
+Phone boot: docs/TERMUX.md
+Build:  make image / make image-aarch64 / make publish-dist

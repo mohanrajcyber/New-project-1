@@ -241,6 +241,45 @@ int main(int argc, char **argv)
         }
     }
 
+    {
+        char variant[32] = "core";
+        FILE *varf = fopen("/etc/aaha/variant", "r");
+        if (varf) {
+            if (fgets(variant, sizeof(variant), varf)) {
+                variant[strcspn(variant, "\r\n")] = '\0';
+            }
+            fclose(varf);
+        }
+        if (strcmp(variant, "net") == 0) {
+            pid_t net = fork();
+            if (net == 0) {
+                execl("/bin/sh", "sh", "-c",
+                      "ip link set lo up 2>/dev/null;"
+                      "insmod /lib/modules/aaha/af_packet.ko 2>/dev/null;"
+                      "insmod /lib/modules/aaha/failover.ko 2>/dev/null;"
+                      "insmod /lib/modules/aaha/net_failover.ko 2>/dev/null;"
+                      "insmod /lib/modules/aaha/virtio_net.ko 2>/dev/null;"
+                      "IFACE=;"
+                      "for n in 1 2 3 4 5 6 7 8; do "
+                      "IFACE=$(ls /sys/class/net 2>/dev/null | grep -v '^lo$' | head -n 1);"
+                      "[ -n \"$IFACE\" ] && break; sleep 1; done;"
+                      "if [ -n \"$IFACE\" ]; then "
+                      "echo \"AahaOS Net: bringing up $IFACE (DHCP via udhcpc)\";"
+                      "ip link set \"$IFACE\" up 2>/dev/null;"
+                      "udhcpc -i \"$IFACE\" -s /usr/share/udhcpc/default.script -q -t 6 -T 2;"
+                      "aaha net; echo; "
+                      "else echo \"AahaOS Net: no interface besides lo\"; echo; fi",
+                      (char *)NULL);
+                _exit(127);
+            }
+            if (net > 0) {
+                int st = 0;
+                while (waitpid(net, &st, 0) < 0 && errno == EINTR) {
+                }
+            }
+        }
+    }
+
     /* PID 1 must not exit. */
     for (;;) {
         run_shell();

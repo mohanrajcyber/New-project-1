@@ -28,7 +28,14 @@ class EngineContractTest {
     @Test
     fun termuxBootIsOurImage() {
         assertTrue(BundledImageEngine.TERMUX_BOOT.contains("aahaos"))
-        assertTrue(BundledImageEngine.TERMUX_BOOT.contains("rdinit=/sbin/init"))
+        assertTrue(BundledImageEngine.TERMUX_BOOT.contains("termux-boot"))
         assertFalse(BundledImageEngine.TERMUX_BOOT.contains("alpine.iso"))
+    }
+
+    @Test
+    fun handedOffIsNotRunning() {
+        val result = EngineResult.HandedOff("Termux", "bash ~/termux-boot-aahaos.sh", "not in APK")
+        assertTrue(result.note.contains("not in APK"))
+        assertFalse(HostStatus.HandedOff == HostStatus.Running)
     }
 }

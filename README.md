@@ -6,29 +6,33 @@ One-tap boot of **our** guest OS. Not a Limbo / Vectras / Andronix wrapper. Not 
 
 **PocketHost** — Android host UI. Not a hypervisor brand.
 
-Web (phone browser): [web/index.html](web/index.html) · short landing: [docs/LANDING.md](docs/LANDING.md)
+Live site (GitHub Pages, **web demo only**): https://mohanrajcyber.github.io/New-project-1/
+
+Phone boot (real guest): [docs/TERMUX.md](docs/TERMUX.md) · APK: [docs/APK.md](docs/APK.md)
 
 ## What this is
 
 - Our branding, `/sbin/init`, `/etc/os-release` (`NAME=AahaOS`), prompt, tools.
 - Real **x86_64** and **aarch64** images that boot in QEMU (serial).
-- Two of **our** variants (both build): **Core** (console) and **Net** (Core + DHCP/ping applets).
-- PocketHost: AahaOS card → **Ready · engine off** → **Start**. Engine tab = Termux sheet. No browse-ISO.
+- Two of **our** variants: **Core** (local-only console) and **Net** (`virtio-net` + `udhcpc` on QEMU user-net).
+- Published phone images: `dist/aarch64/` (committed; Termux wget from the public repo).
+- PocketHost: Ready → Start hands off to Termux. Snaps create a local row. RAM/disk/variant persist into the QEMU command.
 
 ## What this is not
 
 - Not a from-scratch production kernel. The kernel is Linux (GPL-2.0). We write userspace + image.
 - Not a hypervisor clone, not Windows, not a pirated ISO shop.
 - Not “download Alpine/Debian yourself and install it.”
-- PocketHost does **not** claim the VM is running. JNI/QEMU-on-phone is next.
+- PocketHost does **not** claim the VM is running inside the APK. The web page does **not** run QEMU.
 
 ## Proof on a Linux PC
 
 Needs: `qemu-system-x86`, `qemu-system-aarch64`, `busybox-static`, `gcc`, `cpio`, `gzip`, `curl`.
 
 ```bash
-make test       # x86_64 Core + aarch64 Core + x86_64 Net (banner grep)
+make test       # x86_64 + aarch64, Core + Net (banner + Net iface)
 make run        # interactive serial (Ctrl-A x)
+make publish-dist
 ```
 
 Inside the guest:
@@ -43,38 +47,41 @@ aaha help
 ```
 
 No password. No sshd. Console only. Ephemeral initramfs.
+On **Net**, `aaha net` lists `eth0` (or similar) in addition to `lo` when QEMU attached virtio-net.
+
+## Phone (Termux)
 
 ```bash
-make image-aarch64
-make image-net
+pkg update && pkg install qemu-system-aarch64-headless wget
+curl -fsSL -o ~/termux-boot-aahaos.sh \
+  https://raw.githubusercontent.com/mohanrajcyber/New-project-1/main/scripts/termux-boot-aahaos.sh
+chmod +x ~/termux-boot-aahaos.sh
+bash ~/termux-boot-aahaos.sh
+# Net:
+AAHA_VARIANT=net AAHA_MEM=512 AAHA_DISK=64 bash ~/termux-boot-aahaos.sh
 ```
 
 ## PocketHost (Android)
 
 Folder: `android/pockethost` · package `app.pockethost` · minSdk 26
 
-Tabs: **AahaOS** · **Snaps** (empty, honest) · **Engine** (Termux commands + copy) · **More** (RAM/disk defaults).
-
-Image contract: `android/pockethost/app/src/main/assets/aahaos/`
-
-Gradle wrapper is valid. This environment has no Android SDK, so `assembleDebug` stops at “SDK location not found”. With Android Studio:
+Tabs: **AahaOS** · **Snaps** (Create snapshot → row) · **Engine** (Termux sheet) · **More** (RAM/disk/variant → `qemu -m` / persist img).
 
 ```bash
 cd android/pockethost && ./gradlew :app:assembleDebug
 ```
 
-## Phone-only tester
-
-See [docs/PHONE.md](docs/PHONE.md). Sideload APK → Ready + engine off. Start stays honest. Next: Termux QEMU on our aarch64 image, or JNI.
-
 ## Tree
 
 ```text
 os/                 AahaOS userspace + Core/Net overlays
-scripts/            fetch kernel, build, run, test
+scripts/            fetch kernel, build, run, test, Termux boot
+dist/aarch64/       published phone kernel + initramfs (Core + Net)
 android/pockethost  one-tap host UI
 web/index.html      phone-open static page + console demo
-docs/LANDING.md     short mobile read
+index.html          GitHub Pages root (same demo + Termux steps)
+docs/TERMUX.md      phone boot
+docs/APK.md         Gradle / sideload
 ```
 
 LICENSE: MIT for our userspace and PocketHost. Linux kernel binary fetched at build time is GPL-2.0.

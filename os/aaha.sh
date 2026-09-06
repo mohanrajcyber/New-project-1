@@ -47,7 +47,7 @@ cmd_status() {
 cmd_ident() {
     echo "AahaOS identity"
     echo "---------------"
-    echo "product   : AahaOS $(cat /etc/aaha/version 2>/dev/null || echo 0.2.0)"
+    echo "product   : AahaOS $(cat /etc/aaha/version 2>/dev/null || echo 0.3.0)"
     echo "variant   : $(variant)  (Core = console guest, Net = Core + DHCP applets)"
     echo "hostname  : $(hostname 2>/dev/null || echo aaha)"
     os_keys
@@ -71,6 +71,14 @@ cmd_net() {
     echo "AahaOS net (local view)"
     echo "-----------------------"
     echo "variant   : $(variant)"
+    ifaces=""
+    if [ -d /sys/class/net ]; then
+        for n in /sys/class/net/*; do
+            [ -e "$n" ] || continue
+            ifaces="$ifaces ${n##*/}"
+        done
+    fi
+    echo "ifaces    :${ifaces:- (none)}"
     if [ -r /proc/net/dev ]; then
         cat /proc/net/dev
     else
@@ -97,7 +105,7 @@ cmd_lock() {
     cat <<'EOF'
 aaha lock
 ---------
-Reminder: AahaOS v0.2 boots an ephemeral initramfs.
+Reminder: AahaOS v0.3 boots an ephemeral initramfs.
 Reboot loses /tmp. No disk unlock secret, no password, no sshd.
 Not a backdoor. Not a security boundary.
 

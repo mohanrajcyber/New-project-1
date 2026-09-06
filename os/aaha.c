@@ -5,6 +5,7 @@
  * lock reports mount flags and is NOT a security control.
  */
 #define _GNU_SOURCE
+#include <dirent.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/utsname.h>
@@ -89,7 +90,7 @@ static void cmd_ident(void)
     struct utsname uts;
     char host[64] = "?";
     char variant[32] = "core";
-    char version[32] = "0.2.0";
+    char version[32] = "0.3.0";
 
     gethostname(host, sizeof(host));
     read_trim("/etc/aaha/variant", variant, sizeof(variant), "core");
@@ -151,6 +152,23 @@ static void cmd_net(void)
     fputs("AahaOS net (local view)\n", stdout);
     fputs("-----------------------\n", stdout);
     printf("variant   : %s\n", variant);
+    {
+        DIR *d = opendir("/sys/class/net");
+        struct dirent *ent;
+        fputs("ifaces    :", stdout);
+        if (d) {
+            while ((ent = readdir(d)) != NULL) {
+                if (ent->d_name[0] == '.') {
+                    continue;
+                }
+                printf(" %s", ent->d_name);
+            }
+            closedir(d);
+        } else {
+            fputs(" (none)", stdout);
+        }
+        fputc('\n', stdout);
+    }
 
     fp = fopen("/proc/net/dev", "r");
     if (fp) {
@@ -193,7 +211,7 @@ static void cmd_lock(void)
 
     fputs("aaha lock\n", stdout);
     fputs("---------\n", stdout);
-    fputs("Reminder: AahaOS v0.2 boots an ephemeral initramfs.\n", stdout);
+    fputs("Reminder: AahaOS v0.3 boots an ephemeral initramfs.\n", stdout);
     fputs("Reboot loses /tmp. No disk unlock secret, no password, no sshd.\n",
           stdout);
     fputs("Not a backdoor. Not a security boundary.\n\n", stdout);

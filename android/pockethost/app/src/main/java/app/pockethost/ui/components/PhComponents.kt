@@ -45,6 +45,8 @@ fun PhCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
 fun StatusPill(status: HostStatus) {
     val (label, tint) = when (status) {
         HostStatus.Running -> "Running" to Accent
+        HostStatus.Starting -> "Starting" to Warn
+        HostStatus.HandedOff -> "Handed to Termux" to Accent
         HostStatus.ReadyEngineOff -> "Ready" to Ready
         HostStatus.MissingImage -> "Missing image" to Warn
     }
@@ -64,7 +66,10 @@ fun StatusPill(status: HostStatus) {
             fontWeight = FontWeight.SemiBold,
         )
         if (status == HostStatus.ReadyEngineOff) {
-            Text("engine off", color = Mute, fontSize = 12.sp)
+            Text("in-app engine off", color = Mute, fontSize = 12.sp)
+        }
+        if (status == HostStatus.HandedOff) {
+            Text("guest is in Termux", color = Mute, fontSize = 12.sp)
         }
     }
 }

@@ -37,6 +37,7 @@
       font-size: 30px;
       letter-spacing: -0.03em;
     }
+    h2 { margin: 0 0 8px; font-size: 18px; }
     .tamil {
       color: var(--mute);
       margin: 6px 0 18px;
@@ -48,6 +49,7 @@
       border: 1px solid var(--line);
       border-radius: 22px;
       padding: 18px 18px 16px;
+      margin-bottom: 14px;
     }
     .os-name {
       font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
@@ -66,20 +68,31 @@
     .ready { color: var(--ready); font-weight: 700; }
     .off { color: var(--mute); font-size: 12px; }
     .honest { color: var(--mute); font-size: 13px; line-height: 1.45; }
-    button.start {
+    button.start, button.act {
       width: 100%;
-      margin-top: 16px;
-      height: 52px;
+      margin-top: 12px;
+      height: 48px;
       border: 0;
       border-radius: 14px;
       background: var(--accent);
       color: var(--ink);
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 700;
       cursor: pointer;
     }
-    button.start:active { transform: scale(0.99); }
-    button.start:disabled { background: #3d5a58; color: #9bb; cursor: default; }
+    button.start { height: 52px; font-size: 17px; margin-top: 16px; }
+    button.start:active, button.act:active { transform: scale(0.99); }
+    button.ghost {
+      width: 100%;
+      margin-top: 8px;
+      height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--card-hi);
+      color: var(--paper);
+      font-weight: 600;
+      cursor: pointer;
+    }
     .toast {
       display: none;
       margin-top: 12px;
@@ -92,7 +105,7 @@
       line-height: 1.4;
     }
     .toast.show { display: block; }
-    .term-wrap { margin-top: 16px; }
+    .term-wrap { margin: 8px 0 16px; }
     .term-head {
       display: flex;
       justify-content: space-between;
@@ -112,8 +125,8 @@
       background: #05080f;
       border: 1px solid var(--line);
       border-radius: 16px;
-      min-height: 280px;
-      max-height: 52dvh;
+      min-height: 240px;
+      max-height: 46dvh;
       overflow: auto;
       padding: 12px;
       font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
@@ -123,14 +136,8 @@
       word-break: break-word;
       color: #c9f7ef;
     }
-    .term .dim { color: #6f87a5; }
     .chips[hidden], .input-row[hidden] { display: none !important; }
-    .chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
-    }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
     .chip {
       border: 1px solid var(--line);
       background: var(--card-hi);
@@ -140,37 +147,40 @@
       font-size: 12px;
       font-family: ui-monospace, monospace;
     }
-    .input-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 10px;
-    }
+    .chip.on { border-color: var(--accent); color: var(--accent); }
+    .input-row { display: flex; gap: 8px; margin-top: 10px; }
     .input-row input {
-      flex: 1;
-      height: 42px;
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      background: #0b1220;
-      color: var(--paper);
-      padding: 0 12px;
-      font-family: ui-monospace, monospace;
-      font-size: 14px;
+      flex: 1; height: 42px; border-radius: 12px; border: 1px solid var(--line);
+      background: #0b1220; color: var(--paper); padding: 0 12px;
+      font-family: ui-monospace, monospace; font-size: 14px;
     }
     .input-row button {
-      border: 0;
-      border-radius: 12px;
-      background: var(--accent);
-      color: var(--ink);
-      font-weight: 700;
-      padding: 0 14px;
+      border: 0; border-radius: 12px; background: var(--accent);
+      color: var(--ink); font-weight: 700; padding: 0 14px;
     }
-    .foot {
-      color: var(--mute);
-      font-size: 12px;
-      line-height: 1.5;
-      margin-top: 18px;
+    label.slide { display: block; color: var(--paper); font-size: 14px; margin: 10px 0 4px; }
+    input[type=range] { width: 100%; }
+    .mono {
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 11px;
+      color: var(--accent);
+      background: #05080f;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-top: 10px;
     }
+    .snap {
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+      margin-top: 10px;
+    }
+    .foot { color: var(--mute); font-size: 12px; line-height: 1.5; margin-top: 8px; }
     a { color: var(--accent); }
+    ol { margin: 8px 0 0 18px; padding: 0; color: var(--mute); font-size: 13px; line-height: 1.55; }
+    code { font-size: 12px; }
   </style>
 </head>
 <body>
@@ -180,21 +190,65 @@
 
   <section class="card" id="guest">
     <div class="os-name">AahaOS</div>
-    <div class="meta">Embedded Linux · 0.2.0 · core</div>
+    <div class="meta">Embedded Linux · 0.3.0 · <span id="variantMeta">core</span></div>
     <div class="pill-row">
       <span class="dot">●</span>
       <span class="ready" id="statusLabel">Ready</span>
-      <span class="off" id="engineLabel">engine off</span>
+      <span class="off" id="engineLabel">web demo · engine off</span>
     </div>
     <p class="honest" id="statusCopy">
-      Guest image is Ready. Engine is not connected. Start opens a <b>web console demo</b> —
-      it does not boot a live guest in this browser.
+      This page is a <b>web console demo</b>. No hypervisor is running in the browser.
+      Real phone boot is Termux + our aarch64 image (script below).
     </p>
-    <button class="start" id="startBtn" type="button">Start</button>
+    <button class="start" id="startBtn" type="button">Start demo</button>
     <div class="toast" id="toast">
-      Web console demo only. No hypervisor is running. Real boot: <code>make run</code> on a PC,
-      or Termux QEMU later on the phone.
+      Web console demo only. No hypervisor is running.
+      Phone: Termux script. PC: <code>make run</code>.
     </div>
+  </section>
+
+  <section class="card">
+    <h2>Phone boot (real guest)</h2>
+    <p class="honest">
+      Termux + QEMU boots <b>our</b> aarch64 AahaOS image from the public repo.
+      Not a random ISO.
+    </p>
+    <ol>
+      <li>Install <b>Termux</b> (F-Droid).</li>
+      <li><code>pkg update && pkg install qemu-system-aarch64-headless wget</code></li>
+      <li>Download
+        <a href="https://raw.githubusercontent.com/mohanrajcyber/New-project-1/main/scripts/termux-boot-aahaos.sh">termux-boot-aahaos.sh</a>
+      </li>
+      <li>Run the command this page builds from your RAM / disk / variant.</li>
+    </ol>
+    <div class="mono" id="bootCmd"></div>
+    <button class="act" id="copyBoot" type="button">Copy Termux command</button>
+    <button class="ghost" id="copyScript" type="button">Copy script URL</button>
+    <p class="foot">
+      Docs: <a href="https://github.com/mohanrajcyber/New-project-1/blob/main/docs/TERMUX.md">TERMUX.md</a>
+      · images: <a href="https://github.com/mohanrajcyber/New-project-1/tree/main/dist/aarch64">dist/aarch64</a>
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>RAM / disk / variant</h2>
+    <p class="honest">Saved in this browser. Same knobs exist in the PocketHost app. They become <code>-m</code> and a persist disk on the Termux QEMU line.</p>
+    <label class="slide" for="ram">RAM <span id="ramLbl">512</span> MiB → qemu -m</label>
+    <input id="ram" type="range" min="256" max="2048" step="128" value="512" />
+    <label class="slide" for="disk">Persist disk <span id="diskLbl">64</span> MiB (0 = none; not auto-mounted in v0.3)</label>
+    <input id="disk" type="range" min="0" max="1024" step="64" value="64" />
+    <p class="honest" style="margin-top:12px">Guest variant</p>
+    <div class="chips" style="margin-top:6px">
+      <button class="chip on" type="button" data-variant="core">Core (local)</button>
+      <button class="chip" type="button" data-variant="net">Net (DHCP)</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Snapshots</h2>
+    <p class="honest">Local metadata in this browser. Empty until you create one. Not a live QEMU -snapshot.</p>
+    <button class="act" id="mkSnap" type="button">Create snapshot</button>
+    <div id="snaps"></div>
   </section>
 
   <section class="term-wrap">
@@ -202,7 +256,7 @@
       <span>aaha@aaha serial</span>
       <span class="badge">WEB CONSOLE DEMO</span>
     </div>
-    <div class="term" id="term" aria-live="polite">Press Start to replay the AahaOS banner.
+    <div class="term" id="term" aria-live="polite">Press Start demo to replay the AahaOS banner.
 This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
     <div class="chips" id="chips" hidden>
       <button class="chip" type="button" data-cmd="aaha help">aaha help</button>
@@ -222,11 +276,94 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
   <p class="foot">
     AahaOS is our custom embedded Linux (hostname <b>aaha</b>). PocketHost is the host UI.
     Not a hypervisor clone. Not Windows. Not “download Debian yourself.”
-    Phone APK later · this page is the web door.
+    Repo: <a href="https://github.com/mohanrajcyber/New-project-1">mohanrajcyber/New-project-1</a>
   </p>
 
 <script>
 (function () {
+  const SCRIPT = "https://raw.githubusercontent.com/mohanrajcyber/New-project-1/main/scripts/termux-boot-aahaos.sh";
+  const store = window.localStorage;
+  const state = {
+    ram: parseInt(store.getItem("aaha_ram") || "512", 10),
+    disk: parseInt(store.getItem("aaha_disk") || "64", 10),
+    variant: store.getItem("aaha_variant") === "net" ? "net" : "core",
+    snaps: JSON.parse(store.getItem("aaha_snaps") || "[]"),
+  };
+
+  const ramEl = document.getElementById("ram");
+  const diskEl = document.getElementById("disk");
+  const ramLbl = document.getElementById("ramLbl");
+  const diskLbl = document.getElementById("diskLbl");
+  const bootCmd = document.getElementById("bootCmd");
+  const variantMeta = document.getElementById("variantMeta");
+  const snapsEl = document.getElementById("snaps");
+
+  function bootLine() {
+    return "pkg update && pkg install qemu-system-aarch64-headless wget && " +
+      "curl -fsSL -o ~/termux-boot-aahaos.sh " + SCRIPT + " && chmod +x ~/termux-boot-aahaos.sh && " +
+      "AAHA_VARIANT=" + state.variant + " AAHA_MEM=" + state.ram + " AAHA_DISK=" + state.disk +
+      " bash ~/termux-boot-aahaos.sh";
+  }
+
+  function persist() {
+    store.setItem("aaha_ram", String(state.ram));
+    store.setItem("aaha_disk", String(state.disk));
+    store.setItem("aaha_variant", state.variant);
+    store.setItem("aaha_snaps", JSON.stringify(state.snaps));
+    ramEl.value = String(state.ram);
+    diskEl.value = String(state.disk);
+    ramLbl.textContent = String(state.ram);
+    diskLbl.textContent = String(state.disk);
+    variantMeta.textContent = state.variant;
+    bootCmd.textContent = bootLine();
+    document.querySelectorAll("[data-variant]").forEach(function (btn) {
+      btn.classList.toggle("on", btn.getAttribute("data-variant") === state.variant);
+    });
+    if (!state.snaps.length) {
+      snapsEl.innerHTML = "<p class=\"honest\" style=\"margin-top:12px\">No snapshots yet. Create snapshot adds a row.</p>";
+    } else {
+      snapsEl.innerHTML = state.snaps.map(function (s) {
+        return "<div class=\"snap\"><b>" + s.title + "</b><div class=\"honest\">" +
+          s.when + " · " + s.note + "</div></div>";
+      }).join("");
+    }
+  }
+
+  ramEl.addEventListener("input", function () {
+    state.ram = parseInt(ramEl.value, 10);
+    persist();
+  });
+  diskEl.addEventListener("input", function () {
+    state.disk = parseInt(diskEl.value, 10);
+    persist();
+  });
+  document.querySelectorAll("[data-variant]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      state.variant = btn.getAttribute("data-variant");
+      persist();
+    });
+  });
+  document.getElementById("mkSnap").addEventListener("click", function () {
+    var now = new Date();
+    var id = now.toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    state.snaps.unshift({
+      title: "Snapshot " + id,
+      when: now.toLocaleString(),
+      note: "settings only (ram " + state.ram + "M, disk " + state.disk + "M, " + state.variant + "). Web cannot copy initramfs.",
+    });
+    persist();
+  });
+  document.getElementById("copyBoot").addEventListener("click", function () {
+    navigator.clipboard.writeText(bootLine()).then(function () {
+      document.getElementById("copyBoot").textContent = "Copied";
+      setTimeout(function () { document.getElementById("copyBoot").textContent = "Copy Termux command"; }, 1200);
+    });
+  });
+  document.getElementById("copyScript").addEventListener("click", function () {
+    navigator.clipboard.writeText(SCRIPT);
+  });
+  persist();
+
   const term = document.getElementById("term");
   const startBtn = document.getElementById("startBtn");
   const toast = document.getElementById("toast");
@@ -237,157 +374,166 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
   const statusCopy = document.getElementById("statusCopy");
   let booted = false;
 
-  const BANNER = [
-    "Run /sbin/init as init process",
-    "",
-    "      _    _           _    _    ___  ____",
-    "     / \\  | |         / \\  | |  / _ \\/ ___|",
-    "    / _ \\ | |__  __ _/ _ \\ | | | | | \\___ \\",
-    "   / ___ \\| '_ \\/ _` / ___ \\| | | |_| |___) |",
-    "  /_/   \\_\\_|_|_\\__,_/_/   \\_\\_|  \\___/|____/",
-    "",
-    "  +------------------------------------------+",
-    "  |  our guest · one image · pocket ready    |",
-    "  |  ஆஹா! நம்ம OS                             |",
-    "  +------------------------------------------+",
-    "",
-    "  AahaOS 0.2.0  —  custom embedded Linux guest",
-    "  hostname : aaha",
-    "  variant  : core",
-    "  kernel   : Linux 6.12.81-0-virt",
-    "  machine  : x86_64  (replay of the real QEMU serial)",
-    "  root     : initramfs (ephemeral)",
-    "  login    : none — console only, no password, no sshd",
-    "",
-    "  Welcome to AahaOS — our guest, not a downloaded ISO.",
-    "  ஆஹா! இது நம்ம OS. ரெடி.",
-    "",
-    "AahaOS identity",
-    "---------------",
-    "product   : AahaOS 0.2.0",
-    "variant   : core  (Core = console guest, Net = Core + DHCP applets)",
-    "hostname  : aaha",
-    "ID=aahaos",
-    "VERSION_ID=0.2.0",
-    'PRETTY_NAME="AahaOS 0.2.0 (Core)"',
-    'VARIANT="Core"',
-    "prompt    : aaha@aaha",
-    "services  : none (no sshd, no getty login)",
-    "",
-    "AahaOS shell. Try:  aaha status",
-  ].join("\n");
-
-  const CMDS = {
-    "aaha help": [
-      "aaha — AahaOS operator CLI",
+  function banner() {
+    const v = state.variant;
+    const pretty = v === "net" ? "Net" : "Core";
+    return [
+      "Run /sbin/init as init process",
       "",
-      "Usage: aaha <command>",
+      "      _    _           _    _    ___  ____",
+      "     / \\  | |         / \\  | |  / _ \\/ ___|",
+      "    / _ \\ | |__  __ _/ _ \\ | | | | | \\___ \\",
+      "   / ___ \\| '_ \\/ _` / ___ \\| | | |_| |___) |",
+      "  /_/   \\_\\_|_|_\\__,_/_/   \\_\\_|  \\___/|____/",
       "",
-      "  status   short OS identity",
-      "  ident    full identity (variant, os-release, machine)",
-      "  mem      memory from /proc/meminfo (real)",
-      "  net      local interfaces the kernel already exposes",
-      "  lock     read-only-root reminder + current mount flags",
-      "  help     this text",
-    ].join("\n"),
-    "aaha status": [
-      "AahaOS status",
-      "-------------",
-      "os        : AahaOS (custom embedded Linux)",
-      "not       : hypervisor clone, Windows, distro installer, from-scratch kernel",
-      "PRETTY_NAME=\"AahaOS 0.2.0 (Core)\"",
-      "VERSION_ID=0.2.0",
-      "ID=aahaos",
-      "VARIANT=\"Core\"",
-      "variant   : core",
-      "hostname  : aaha",
-      "kernel    : Linux 6.12.81-0-virt (x86_64)",
-      "rootfs    : initramfs (ephemeral). Persist is a later host job.",
-      "auth      : no password login; console only.",
-    ].join("\n"),
-    "aaha ident": [
+      "  +------------------------------------------+",
+      "  |  our guest · one image · pocket ready    |",
+      "  |  ஆஹா! நம்ம OS                             |",
+      "  +------------------------------------------+",
+      "",
+      "  AahaOS 0.3.0  —  custom embedded Linux guest",
+      "  hostname : aaha",
+      "  variant  : " + v,
+      "  kernel   : Linux 6.12.81-0-virt",
+      "  machine  : aarch64  (replay — not live QEMU)",
+      "  root     : initramfs (ephemeral)",
+      "  login    : none — console only, no password, no sshd",
+      "",
+      "  Welcome to AahaOS — our guest, not a downloaded ISO.",
+      "  ஆஹா! இது நம்ம OS. ரெடி.",
+      "",
+      v === "net" ? "AahaOS Net: bringing up eth0 (DHCP via udhcpc)\n" : "",
       "AahaOS identity",
       "---------------",
-      "product   : AahaOS 0.2.0",
-      "variant   : core  (Core = console guest, Net = Core + DHCP applets)",
+      "product   : AahaOS 0.3.0",
+      "variant   : " + v + "  (Core = local, Net = virtio-net + DHCP)",
       "hostname  : aaha",
-      "PRETTY_NAME=\"AahaOS 0.2.0 (Core)\"",
-      "VERSION_ID=0.2.0",
       "ID=aahaos",
-      "VARIANT=\"Core\"",
-      "VARIANT_ID=core",
-      "uname     : Linux 6.12.81-0-virt #1-Alpine SMP PREEMPT_DYNAMIC x86_64",
+      "VERSION_ID=0.3.0",
+      "PRETTY_NAME=\"AahaOS 0.3.0 (" + pretty + ")\"",
+      "VARIANT=\"" + pretty + "\"",
       "prompt    : aaha@aaha",
       "services  : none (no sshd, no getty login)",
-    ].join("\n"),
-    "aaha mem": [
-      "AahaOS mem",
-      "----------",
-      "MemTotal:         196084 kB",
-      "MemFree:          149164 kB",
-      "MemAvailable:     151252 kB",
-      "Buffers:            2048 kB",
-      "Cached:            12288 kB",
-      "Source: /proc/meminfo (this guest replay). Not a host leak tool.",
-    ].join("\n"),
-    "aaha net": [
+      "",
+      "AahaOS shell. Try:  aaha status",
+    ].join("\n");
+  }
+
+  function netOut() {
+    if (state.variant === "net") {
+      return [
+        "AahaOS net (local view)",
+        "-----------------------",
+        "variant   : net",
+        "ifaces    : lo eth0",
+        "Inter-|   Receive                                                |  Transmit",
+        " face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed",
+        "    lo:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0",
+        "  eth0:    1234       8    0    0    0     0          0         0      512       4    0    0    0     0       0          0",
+        "",
+        "IPv4 routes (/proc/net/route):",
+        "Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask",
+        "eth0    00000000        0202000A        0003    0       0       0       00000000",
+        "",
+        "Net variant includes busybox udhcpc + ping. No port scan, no exploit tools.",
+        "This command only lists what the kernel already exposes.",
+        "(Web replay of a typical QEMU user-net guest. Real phone: Termux script.)",
+      ].join("\n");
+    }
+    return [
       "AahaOS net (local view)",
       "-----------------------",
       "variant   : core",
+      "ifaces    : lo",
       "Inter-|   Receive                                                |  Transmit",
       " face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed",
       "    lo:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0",
       "",
       "Core variant: interface list only. AahaOS Net adds DHCP applets.",
       "This command only lists what the kernel already exposes.",
-    ].join("\n"),
-    "aaha lock": [
-      "aaha lock",
-      "---------",
-      "Reminder: AahaOS v0.2 boots an ephemeral initramfs.",
-      "Reboot loses /tmp. No disk unlock secret, no password, no sshd.",
-      "Not a backdoor. Not a security boundary.",
-      "",
-      "root mount: rootfs / (rootfs) rw (initramfs writable until reboot)",
-      "PocketHost will own persist / snapshots later.",
-    ].join("\n"),
-    help: null,
-  };
-  CMDS.help = CMDS["aaha help"];
-  CMDS.status = CMDS["aaha status"];
-  CMDS.ident = CMDS["aaha ident"];
-  CMDS.mem = CMDS["aaha mem"];
-  CMDS.net = CMDS["aaha net"];
-  CMDS.lock = CMDS["aaha lock"];
+    ].join("\n");
+  }
+
+  function cmds() {
+    return {
+      "aaha help": [
+        "aaha — AahaOS operator CLI",
+        "",
+        "Usage: aaha <command>",
+        "",
+        "  status   short OS identity",
+        "  ident    full identity (variant, os-release, machine)",
+        "  mem      memory from /proc/meminfo (real)",
+        "  net      local interfaces the kernel already exposes",
+        "  lock     read-only-root reminder + current mount flags",
+        "  help     this text",
+      ].join("\n"),
+      "aaha status": [
+        "AahaOS status",
+        "-------------",
+        "os        : AahaOS (custom embedded Linux)",
+        "not       : hypervisor clone, Windows, distro installer, from-scratch kernel",
+        "PRETTY_NAME=\"AahaOS 0.3.0 (" + (state.variant === "net" ? "Net" : "Core") + ")\"",
+        "VERSION_ID=0.3.0",
+        "ID=aahaos",
+        "VARIANT=\"" + (state.variant === "net" ? "Net" : "Core") + "\"",
+        "variant   : " + state.variant,
+        "hostname  : aaha",
+        "kernel    : Linux 6.12.81-0-virt (aarch64)",
+        "rootfs    : initramfs (ephemeral). Persist is a later host job.",
+        "auth      : no password login; console only.",
+      ].join("\n"),
+      "aaha ident": [
+        "AahaOS identity",
+        "---------------",
+        "product   : AahaOS 0.3.0",
+        "variant   : " + state.variant + "  (Core = local, Net = virtio-net + DHCP)",
+        "hostname  : aaha",
+        "PRETTY_NAME=\"AahaOS 0.3.0 (" + (state.variant === "net" ? "Net" : "Core") + ")\"",
+        "VERSION_ID=0.3.0",
+        "ID=aahaos",
+        "prompt    : aaha@aaha",
+        "services  : none (no sshd, no getty login)",
+      ].join("\n"),
+      "aaha mem": [
+        "AahaOS mem",
+        "----------",
+        "MemTotal:        " + (state.ram * 1024) + " kB",
+        "MemFree:          " + Math.max(64, state.ram - 80) * 1024 + " kB",
+        "Source: /proc/meminfo (this guest replay). Not a host leak tool.",
+      ].join("\n"),
+      "aaha net": netOut(),
+      "aaha lock": [
+        "aaha lock",
+        "---------",
+        "Reminder: AahaOS v0.3 boots an ephemeral initramfs.",
+        "Reboot loses /tmp. No disk unlock secret, no password, no sshd.",
+        "Not a backdoor. Not a security boundary.",
+        "",
+        "root mount: rootfs / (rootfs) rw (initramfs writable until reboot)",
+        "PocketHost snapshots are host-side metadata + optional initramfs copy.",
+      ].join("\n"),
+    };
+  }
 
   function write(text, append) {
     term.textContent = append ? (term.textContent + text) : text;
     term.scrollTop = term.scrollHeight;
   }
-
-  function prompt() {
-    write("\n\naaha@aaha:~# ", true);
-  }
+  function prompt() { write("\n\naaha@aaha:~# ", true); }
 
   function runCmd(raw) {
     const cmd = String(raw || "").trim();
     if (!cmd) return;
     if (!booted) startDemo();
-    if (term.textContent.endsWith("aaha@aaha:~# ")) {
-      write(cmd, true);
-    } else {
-      write("\naaha@aaha:~# " + cmd, true);
-    }
-    if (cmd === "clear") {
-      write("aaha@aaha:~# ");
-      return;
-    }
-    const out = CMDS[cmd];
-    if (out) {
-      write("\n" + out, true);
-    } else {
-      write("\naaha: unknown command '" + cmd.replace(/^aaha\\s+/, "") + "'\n" + CMDS["aaha help"], true);
-    }
+    if (term.textContent.endsWith("aaha@aaha:~# ")) write(cmd, true);
+    else write("\naaha@aaha:~# " + cmd, true);
+    if (cmd === "clear") { write("aaha@aaha:~# "); return; }
+    const table = cmds();
+    table.help = table["aaha help"];
+    const out = table[cmd];
+    if (out) write("\n" + out, true);
+    else write("\naaha: unknown command '" + cmd + "'\n" + table["aaha help"], true);
     prompt();
   }
 
@@ -396,10 +542,10 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
     toast.classList.add("show");
     engineLabel.textContent = "web demo (not a live guest)";
     statusCopy.innerHTML =
-      "Still <b>not running</b> a hypervisor. You are in a labeled web console replay of the real AahaOS serial.";
+      "Still <b>not running</b> a hypervisor. Labeled replay of the real serial. Phone boot is the Termux script.";
     chips.hidden = false;
     form.hidden = false;
-    write(BANNER);
+    write(banner());
     prompt();
     startBtn.textContent = "Replay banner";
   }
@@ -415,7 +561,6 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
     input.value = "";
     input.focus();
   });
-
   if (/[?&]start=1/.test(location.search)) startDemo();
 })();
 </script>

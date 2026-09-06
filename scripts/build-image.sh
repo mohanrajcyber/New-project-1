@@ -39,11 +39,11 @@ chmod 0755 "$STAGING/bin/busybox"
 applets=(
     sh ash ls cat echo printf pwd mkdir mount umount hostname
     uname dmesg sleep reboot poweroff halt clear cp mv rm ln
-    chmod chown grep sed awk head tail wc ps kill
+    chmod chown grep sed awk head tail wc ps kill tr
     ip ifconfig lsmod
 )
 if [[ "$VARIANT" == "net" ]]; then
-    applets+=(udhcpc ping route wget)
+    applets+=(udhcpc ping route wget insmod lsmod rmmod)
 fi
 for a in "${applets[@]}"; do
     ln -sf busybox "$STAGING/bin/$a"
@@ -85,6 +85,10 @@ fi
 
 if [[ "$VARIANT" == "net" ]]; then
     chmod 0755 "$STAGING/usr/share/udhcpc/default.script" 2>/dev/null || true
+    "$ROOT/scripts/fetch-virtio-modules.sh" "$ARCH"
+    mkdir -p "$STAGING/lib/modules/aaha"
+    cp -f "$ROOT/build/${ARCH}/virtio-modules/"*.ko "$STAGING/lib/modules/aaha/"
+    echo "-- bundled virtio-net modules (same kernel, GPL-2.0)"
 fi
 
 if [[ "$ARCH" == "$(uname -m)" ]]; then

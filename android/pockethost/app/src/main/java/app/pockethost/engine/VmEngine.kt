@@ -3,8 +3,8 @@ package app.pockethost.engine
 /**
  * Host-side contract for booting the bundled AahaOS guest.
  *
- * Ready means the image contract / manifest is present — not that a VM
- * process is executing. Do not report "running" unless [isRunning] is true.
+ * Ready means the image contract is present — not that a VM process
+ * is executing inside PocketHost. Do not report Running unless we own the process.
  */
 interface VmEngine {
     val imageReady: Boolean
@@ -17,15 +17,24 @@ interface VmEngine {
 sealed class EngineResult {
     data class Started(val note: String) : EngineResult()
 
+    data class HandedOff(
+        val dest: String,
+        val command: String,
+        val note: String,
+    ) : EngineResult()
+
     data class Unavailable(
         val reason: String,
         val nextStep: String,
+        val command: String = "",
     ) : EngineResult()
 }
 
 enum class HostStatus {
     MissingImage,
     ReadyEngineOff,
+    Starting,
+    HandedOff,
     Running,
 }
 

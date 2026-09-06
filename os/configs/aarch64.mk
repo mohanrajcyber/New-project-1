@@ -10,3 +10,6 @@ KERNEL_SHA256 := 749eb77d8c0a887868166c220e36411400b9bed5df6443b201c96950faf0f8a
 BUSYBOX_SRC := alpine-static
 BUSYBOX_URL := https://dl-cdn.alpinelinux.org/alpine/v3.21/main/aarch64/busybox-static-1.37.0-r14.apk
 BUSYBOX_SHA256 := 6fd7ea97062beb51fa785ba858f823e1dfe4daf6bfa91ff4d5359b1061988c69
+# Same-kernel modules (GPL-2.0) so Net can bind virtio-net. Not Alpine userspace.
+MODULES_INITRD_URL := https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/aarch64/netboot/initramfs-virt
+MODULES_INITRD_SHA256 := 6f48e46367737f1f223f2be3968945e4aeb0e7089f87386aee9da967c46d6269

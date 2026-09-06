@@ -1,0 +1,24 @@
+PocketHost APK — this cloud VM (2026-09-06)
+==========================================
+
+Android command-line tools WERE installed here:
+
+  unzip commandlinetools-linux-13114758_latest.zip
+  sdkmanager platform-tools platforms;android-35 build-tools;35.0.0
+  (Gradle also pulled build-tools 34.0.0)
+
+  ANDROID_SDK_ROOT=/tmp/android-sdk   (not in the repo)
+  OpenJDK 21 on the VM
+
+Result:  ./gradlew :app:assembleDebug  succeeded.
+
+Sideloadable debug APK (unsigned debug key):
+
+  dist/android/pockethost-debug.apk
+
+On your machine with Android Studio / SDK:
+
+  cd android/pockethost
+  echo "sdk.dir=$HOME/Android/Sdk" > local.properties
+  ./gradlew :app:assembleDebug
+  ./gradlew :app:bundleRelease

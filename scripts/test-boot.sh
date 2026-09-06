@@ -35,6 +35,9 @@ extra=()
 if [[ "$ARCH" == "aarch64" ]]; then
     extra+=(-cpu "${QEMU_CPU}")
 fi
+if [[ "$VARIANT" == "net" ]]; then
+    extra+=(-netdev user,id=n0 -device virtio-net-pci,netdev=n0)
+fi
 
 echo "== serial boot test (${ARCH} ${VARIANT})"
 "$QEMU" \
@@ -60,14 +63,25 @@ cleanup() {
 trap cleanup EXIT
 
 ok=0
-for _ in $(seq 1 60); do
+need_net=0
+[[ "$VARIANT" == "net" ]] && need_net=1
+for _ in $(seq 1 90); do
     if [[ -f "$LOG" ]] \
         && grep -q "AahaOS" "$LOG" \
         && grep -q "நம்ம OS" "$LOG" \
         && grep -q "AahaOS identity" "$LOG" \
         && grep -q "variant" "$LOG"; then
-        ok=1
-        break
+        if [[ "$need_net" -eq 1 ]]; then
+            if grep -Eq 'ifaces[[:space:]]*:.*\b(eth0|enp|ens|virtio)' "$LOG" \
+                || grep -Eq 'bringing up (eth0|enp|ens)' "$LOG" \
+                || grep -Eq '^[[:space:]]*(eth0|enp[0-9]+s[0-9]+|ens[0-9]+):' "$LOG"; then
+                ok=1
+                break
+            fi
+        else
+            ok=1
+            break
+        fi
     fi
     sleep 1
 done
@@ -81,8 +95,15 @@ fi
 echo "--------------------"
 
 if [[ "$ok" -ne 1 ]]; then
-    echo "FAIL: AahaOS banner/identity not seen on serial within 60s" >&2
+    if [[ "$need_net" -eq 1 ]]; then
+        echo "FAIL: AahaOS Net banner ok but no guest iface besides lo within 90s" >&2
+    else
+        echo "FAIL: AahaOS banner/identity not seen on serial within 90s" >&2
+    fi
     exit 1
 fi
 
 echo "PASS: AahaOS banner + Tamil MOTD + ident on ${ARCH} ${VARIANT} serial"
+if [[ "$need_net" -eq 1 ]]; then
+    echo "PASS: Net variant serial shows a non-lo iface (virtio-net + QEMU user)"
+fi

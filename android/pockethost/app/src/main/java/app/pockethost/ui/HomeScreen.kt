@@ -1,5 +1,6 @@
 package app.pockethost.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -21,6 +22,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,9 +44,12 @@ import app.pockethost.ui.theme.Paper
 @Composable
 fun HomeScreen(engine: BundledImageEngine, onOpenEngine: () -> Unit) {
     val manifest = remember { engine.manifest() }
-    val status = remember { engine.hostStatus() }
-    var dialog by remember { mutableStateOf<EngineResult.Unavailable?>(null) }
+    var status by remember { mutableStateOf(engine.hostStatus()) }
+    var dialog by remember { mutableStateOf<EngineResult?>(null) }
     val paths = remember { engine.imagePaths() }
+    val clipboard = LocalClipboardManager.current
+    val ctx = LocalContext.current
+    val termux = remember { engine.termuxInstalled() }
 
     Column(
         modifier = Modifier
@@ -63,9 +70,9 @@ fun HomeScreen(engine: BundledImageEngine, onOpenEngine: () -> Unit) {
         when (status) {
             HostStatus.MissingImage -> EmptyState(
                 title = "Image contract missing",
-                body = "Rebuild the APK so assets/aahaos/manifest.json ships. Start stays disabled until then.",
+                body = "Rebuild the APK so assets/aahaos/manifest.json ships.",
             )
-            HostStatus.ReadyEngineOff, HostStatus.Running -> PhCard {
+            else -> PhCard {
                 Text(
                     "AahaOS",
                     color = Paper,
@@ -74,7 +81,7 @@ fun HomeScreen(engine: BundledImageEngine, onOpenEngine: () -> Unit) {
                     fontFamily = FontFamily.Monospace,
                 )
                 Text(
-                    "Embedded Linux  ·  ${manifest?.version ?: "0.2.0"}  ·  ${manifest?.variant ?: "core"}",
+                    "Embedded Linux  ·  ${manifest?.version ?: "0.3.0"}  ·  ${engine.settings.variant}",
                     color = Mute,
                     fontSize = 13.sp,
                     modifier = Modifier.padding(top = 4.dp),
@@ -84,22 +91,27 @@ fun HomeScreen(engine: BundledImageEngine, onOpenEngine: () -> Unit) {
                 Spacer(Modifier.height(10.dp))
                 Text(
                     when (status) {
-                        HostStatus.Running -> "Guest console is live."
-                        else -> "Guest image is Ready. Engine is not connected. Start will not fake a boot."
+                        HostStatus.Running -> "Guest console is live in this app."
+                        HostStatus.HandedOff -> "Boot command was handed to Termux. This APK is not the guest."
+                        HostStatus.Starting -> "Preparing Termux hand-off…"
+                        else -> "Ready. Start copies the boot script and opens Termux if installed. It will not fake a running VM here."
                     },
                     color = Mute,
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
                 )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
+                MonoBlock("Termux ${if (termux) "installed" else "not installed"}")
+                MonoBlock("ram ${engine.settings.ramMb}M  disk ${engine.settings.diskMb}M")
                 MonoBlock("on-device  ${paths.onDeviceRoot}")
                 Spacer(Modifier.height(20.dp))
                 Button(
                     onClick = {
-                        when (val result = engine.start()) {
-                            is EngineResult.Started -> Unit
-                            is EngineResult.Unavailable -> dialog = result
-                        }
+                        val result = engine.start()
+                        status = engine.hostStatus()
+                        clipboard.setText(AnnotatedString(engine.fetchScriptCommand()))
+                        Toast.makeText(ctx, "Boot command copied", Toast.LENGTH_SHORT).show()
+                        dialog = result
                     },
                     enabled = status != HostStatus.MissingImage,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -117,8 +129,7 @@ fun HomeScreen(engine: BundledImageEngine, onOpenEngine: () -> Unit) {
 
         Spacer(Modifier.height(16.dp))
         Text(
-            "Our OS image. Not Debian-you-install. Not a pirated ISO. " +
-                "PC: make run  ·  Phone: Engine tab (Termux sheet).",
+            "Phone: Termux + our aarch64 image. PC: make run. Web: demo only.",
             color = Mute,
             fontSize = 12.sp,
             lineHeight = 17.sp,
@@ -126,21 +137,26 @@ fun HomeScreen(engine: BundledImageEngine, onOpenEngine: () -> Unit) {
     }
 
     dialog?.let { info ->
+        val title = when (info) {
+            is EngineResult.HandedOff -> "Handed to Termux"
+            is EngineResult.Started -> "Started"
+            is EngineResult.Unavailable -> "Start — next step"
+        }
+        val body = when (info) {
+            is EngineResult.HandedOff -> info.note + "\n\n" + info.command
+            is EngineResult.Started -> info.note
+            is EngineResult.Unavailable -> info.reason + "\n\n" + info.nextStep +
+                if (info.command.isNotBlank()) "\n\n${info.command}" else ""
+        }
         AlertDialog(
             onDismissRequest = { dialog = null },
-            title = { Text("Engine not wired") },
-            text = {
-                Column {
-                    Text(info.reason)
-                    Spacer(Modifier.height(12.dp))
-                    Text(info.nextStep)
-                }
-            },
+            title = { Text(title) },
+            text = { Text(body) },
             confirmButton = {
                 TextButton(onClick = {
                     dialog = null
                     onOpenEngine()
-                }) { Text("Open Engine sheet") }
+                }) { Text("Engine sheet") }
             },
             dismissButton = {
                 TextButton(onClick = { dialog = null }) { Text("Close") }
