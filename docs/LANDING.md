@@ -9,7 +9,8 @@ AahaOS is a custom embedded Linux — our init, our hostname `aaha`, our `aaha` 
 **Core** — console guest (default).  
 **Net** — Core plus busybox DHCP/ping applets. Still our OS, not a downloaded distro.
 
+Phone web: open `web/index.html` (Ready → Start is a labeled console demo).  
 PC: `make test` then `make run`.  
-Phone: sideload PocketHost → Ready · engine off → Engine tab for the Termux sheet.
+APK later: sideload PocketHost → Ready · engine off → Engine tab for the Termux sheet.
 
 See the root [README](../README.md).

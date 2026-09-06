@@ -3,7 +3,7 @@
 
 ARCH ?= x86_64
 VARIANT ?= core
-.PHONY: image run test test-boot image-aarch64 run-aarch64 image-net test-net android help clean
+.PHONY: image run test test-boot image-aarch64 run-aarch64 image-net test-net android web help clean
 
 help:
 	@echo "AahaOS (guest) + PocketHost (host UI)"
@@ -15,6 +15,7 @@ help:
 	@echo "  make image-aarch64    phone-class Core image"
 	@echo "  make image-net        AahaOS Net (DHCP applets) for x86_64"
 	@echo "  make android          how to open the Gradle project"
+	@echo "  make web              serve web/ on http://127.0.0.1:8765"
 	@echo "  make clean            remove build/ and generated images"
 
 image:
@@ -44,6 +45,10 @@ test-net: image-net
 android:
 	@echo "Open android/pockethost in Android Studio."
 	@echo "If the Android SDK is installed:  cd android/pockethost && ./gradlew :app:assembleDebug"
+
+web:
+	@echo "Phone page: http://127.0.0.1:8765/"
+	python3 -m http.server 8765 --bind 127.0.0.1 --directory web
 
 clean:
 	rm -rf build images/*/vmlinuz images/*/initramfs.cpio.gz images/*/manifest.json images/*-net

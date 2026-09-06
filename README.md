@@ -6,7 +6,7 @@ One-tap boot of **our** guest OS. Not a Limbo / Vectras / Andronix wrapper. Not 
 
 **PocketHost** — Android host UI. Not a hypervisor brand.
 
-Short landing: [docs/LANDING.md](docs/LANDING.md)
+Web (phone browser): [web/index.html](web/index.html) · short landing: [docs/LANDING.md](docs/LANDING.md)
 
 ## What this is
 
@@ -73,6 +73,7 @@ See [docs/PHONE.md](docs/PHONE.md). Sideload APK → Ready + engine off. Start s
 os/                 AahaOS userspace + Core/Net overlays
 scripts/            fetch kernel, build, run, test
 android/pockethost  one-tap host UI
+web/index.html      phone-open static page + console demo
 docs/LANDING.md     short mobile read
 ```
 

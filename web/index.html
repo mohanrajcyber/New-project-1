@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#070B14" />
+  <title>AahaOS · PocketHost</title>
+  <style>
+    :root {
+      --ink: #070B14;
+      --card: #101827;
+      --card-hi: #162033;
+      --line: #2A3A55;
+      --accent: #2EE6D6;
+      --ready: #3DDC97;
+      --paper: #F2F6FF;
+      --mute: #8FA0BB;
+      --warn: #F5C16C;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--ink); color: var(--paper); }
+    body {
+      font-family: "Segoe UI", "Noto Sans Tamil", "Noto Sans", system-ui, sans-serif;
+      min-height: 100dvh;
+      padding: 20px 16px 32px;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .kicker {
+      color: var(--accent);
+      letter-spacing: 0.18em;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    h1 {
+      margin: 6px 0 0;
+      font-size: 30px;
+      letter-spacing: -0.03em;
+    }
+    .tamil {
+      color: var(--mute);
+      margin: 6px 0 18px;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px 18px 16px;
+    }
+    .os-name {
+      font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
+      font-size: 22px;
+      font-weight: 650;
+    }
+    .meta { color: var(--mute); font-size: 13px; margin-top: 4px; }
+    .pill-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 14px 0 8px;
+      flex-wrap: wrap;
+    }
+    .dot { color: var(--ready); font-size: 12px; }
+    .ready { color: var(--ready); font-weight: 700; }
+    .off { color: var(--mute); font-size: 12px; }
+    .honest { color: var(--mute); font-size: 13px; line-height: 1.45; }
+    button.start {
+      width: 100%;
+      margin-top: 16px;
+      height: 52px;
+      border: 0;
+      border-radius: 14px;
+      background: var(--accent);
+      color: var(--ink);
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.start:active { transform: scale(0.99); }
+    button.start:disabled { background: #3d5a58; color: #9bb; cursor: default; }
+    .toast {
+      display: none;
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #1a2436;
+      border: 1px solid var(--line);
+      color: var(--warn);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .toast.show { display: block; }
+    .term-wrap { margin-top: 16px; }
+    .term-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--mute);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .badge {
+      background: var(--card-hi);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 3px 8px;
+      color: var(--warn);
+    }
+    .term {
+      background: #05080f;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      min-height: 280px;
+      max-height: 52dvh;
+      overflow: auto;
+      padding: 12px;
+      font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #c9f7ef;
+    }
+    .term .dim { color: #6f87a5; }
+    .chips[hidden], .input-row[hidden] { display: none !important; }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .chip {
+      border: 1px solid var(--line);
+      background: var(--card-hi);
+      color: var(--paper);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-family: ui-monospace, monospace;
+    }
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .input-row input {
+      flex: 1;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #0b1220;
+      color: var(--paper);
+      padding: 0 12px;
+      font-family: ui-monospace, monospace;
+      font-size: 14px;
+    }
+    .input-row button {
+      border: 0;
+      border-radius: 12px;
+      background: var(--accent);
+      color: var(--ink);
+      font-weight: 700;
+      padding: 0 14px;
+    }
+    .foot {
+      color: var(--mute);
+      font-size: 12px;
+      line-height: 1.5;
+      margin-top: 18px;
+    }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="kicker">POCKETHOST</div>
+  <h1>One-tap AahaOS</h1>
+  <p class="tamil">ஆஹா! நம்ம OS. Our guest — not an ISO wizard.</p>
+
+  <section class="card" id="guest">
+    <div class="os-name">AahaOS</div>
+    <div class="meta">Embedded Linux · 0.2.0 · core</div>
+    <div class="pill-row">
+      <span class="dot">●</span>
+      <span class="ready" id="statusLabel">Ready</span>
+      <span class="off" id="engineLabel">engine off</span>
+    </div>
+    <p class="honest" id="statusCopy">
+      Guest image is Ready. Engine is not connected. Start opens a <b>web console demo</b> —
+      it does not boot a live guest in this browser.
+    </p>
+    <button class="start" id="startBtn" type="button">Start</button>
+    <div class="toast" id="toast">
+      Web console demo only. No hypervisor is running. Real boot: <code>make run</code> on a PC,
+      or Termux QEMU later on the phone.
+    </div>
+  </section>
+
+  <section class="term-wrap">
+    <div class="term-head">
+      <span>aaha@aaha serial</span>
+      <span class="badge">WEB CONSOLE DEMO</span>
+    </div>
+    <div class="term" id="term" aria-live="polite">Press Start to replay the AahaOS banner.
+This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
+    <div class="chips" id="chips" hidden>
+      <button class="chip" type="button" data-cmd="aaha help">aaha help</button>
+      <button class="chip" type="button" data-cmd="aaha status">aaha status</button>
+      <button class="chip" type="button" data-cmd="aaha ident">aaha ident</button>
+      <button class="chip" type="button" data-cmd="aaha mem">aaha mem</button>
+      <button class="chip" type="button" data-cmd="aaha net">aaha net</button>
+      <button class="chip" type="button" data-cmd="aaha lock">aaha lock</button>
+      <button class="chip" type="button" data-cmd="clear">clear</button>
+    </div>
+    <form class="input-row" id="cmdForm" hidden>
+      <input id="cmd" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="aaha help" />
+      <button type="submit">Go</button>
+    </form>
+  </section>
+
+  <p class="foot">
+    AahaOS is our custom embedded Linux (hostname <b>aaha</b>). PocketHost is the host UI.
+    Not a hypervisor clone. Not Windows. Not “download Debian yourself.”
+    Phone APK later · this page is the web door.
+  </p>
+
+<script>
+(function () {
+  const term = document.getElementById("term");
+  const startBtn = document.getElementById("startBtn");
+  const toast = document.getElementById("toast");
+  const chips = document.getElementById("chips");
+  const form = document.getElementById("cmdForm");
+  const input = document.getElementById("cmd");
+  const engineLabel = document.getElementById("engineLabel");
+  const statusCopy = document.getElementById("statusCopy");
+  let booted = false;
+
+  const BANNER = [
+    "Run /sbin/init as init process",
+    "",
+    "      _    _           _    _    ___  ____",
+    "     / \\  | |         / \\  | |  / _ \\/ ___|",
+    "    / _ \\ | |__  __ _/ _ \\ | | | | | \\___ \\",
+    "   / ___ \\| '_ \\/ _` / ___ \\| | | |_| |___) |",
+    "  /_/   \\_\\_|_|_\\__,_/_/   \\_\\_|  \\___/|____/",
+    "",
+    "  +------------------------------------------+",
+    "  |  our guest · one image · pocket ready    |",
+    "  |  ஆஹா! நம்ம OS                             |",
+    "  +------------------------------------------+",
+    "",
+    "  AahaOS 0.2.0  —  custom embedded Linux guest",
+    "  hostname : aaha",
+    "  variant  : core",
+    "  kernel   : Linux 6.12.81-0-virt",
+    "  machine  : x86_64  (replay of the real QEMU serial)",
+    "  root     : initramfs (ephemeral)",
+    "  login    : none — console only, no password, no sshd",
+    "",
+    "  Welcome to AahaOS — our guest, not a downloaded ISO.",
+    "  ஆஹா! இது நம்ம OS. ரெடி.",
+    "",
+    "AahaOS identity",
+    "---------------",
+    "product   : AahaOS 0.2.0",
+    "variant   : core  (Core = console guest, Net = Core + DHCP applets)",
+    "hostname  : aaha",
+    "ID=aahaos",
+    "VERSION_ID=0.2.0",
+    'PRETTY_NAME="AahaOS 0.2.0 (Core)"',
+    'VARIANT="Core"',
+    "prompt    : aaha@aaha",
+    "services  : none (no sshd, no getty login)",
+    "",
+    "AahaOS shell. Try:  aaha status",
+  ].join("\n");
+
+  const CMDS = {
+    "aaha help": [
+      "aaha — AahaOS operator CLI",
+      "",
+      "Usage: aaha <command>",
+      "",
+      "  status   short OS identity",
+      "  ident    full identity (variant, os-release, machine)",
+      "  mem      memory from /proc/meminfo (real)",
+      "  net      local interfaces the kernel already exposes",
+      "  lock     read-only-root reminder + current mount flags",
+      "  help     this text",
+    ].join("\n"),
+    "aaha status": [
+      "AahaOS status",
+      "-------------",
+      "os        : AahaOS (custom embedded Linux)",
+      "not       : hypervisor clone, Windows, distro installer, from-scratch kernel",
+      "PRETTY_NAME=\"AahaOS 0.2.0 (Core)\"",
+      "VERSION_ID=0.2.0",
+      "ID=aahaos",
+      "VARIANT=\"Core\"",
+      "variant   : core",
+      "hostname  : aaha",
+      "kernel    : Linux 6.12.81-0-virt (x86_64)",
+      "rootfs    : initramfs (ephemeral). Persist is a later host job.",
+      "auth      : no password login; console only.",
+    ].join("\n"),
+    "aaha ident": [
+      "AahaOS identity",
+      "---------------",
+      "product   : AahaOS 0.2.0",
+      "variant   : core  (Core = console guest, Net = Core + DHCP applets)",
+      "hostname  : aaha",
+      "PRETTY_NAME=\"AahaOS 0.2.0 (Core)\"",
+      "VERSION_ID=0.2.0",
+      "ID=aahaos",
+      "VARIANT=\"Core\"",
+      "VARIANT_ID=core",
+      "uname     : Linux 6.12.81-0-virt #1-Alpine SMP PREEMPT_DYNAMIC x86_64",
+      "prompt    : aaha@aaha",
+      "services  : none (no sshd, no getty login)",
+    ].join("\n"),
+    "aaha mem": [
+      "AahaOS mem",
+      "----------",
+      "MemTotal:         196084 kB",
+      "MemFree:          149164 kB",
+      "MemAvailable:     151252 kB",
+      "Buffers:            2048 kB",
+      "Cached:            12288 kB",
+      "Source: /proc/meminfo (this guest replay). Not a host leak tool.",
+    ].join("\n"),
+    "aaha net": [
+      "AahaOS net (local view)",
+      "-----------------------",
+      "variant   : core",
+      "Inter-|   Receive                                                |  Transmit",
+      " face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed",
+      "    lo:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0",
+      "",
+      "Core variant: interface list only. AahaOS Net adds DHCP applets.",
+      "This command only lists what the kernel already exposes.",
+    ].join("\n"),
+    "aaha lock": [
+      "aaha lock",
+      "---------",
+      "Reminder: AahaOS v0.2 boots an ephemeral initramfs.",
+      "Reboot loses /tmp. No disk unlock secret, no password, no sshd.",
+      "Not a backdoor. Not a security boundary.",
+      "",
+      "root mount: rootfs / (rootfs) rw (initramfs writable until reboot)",
+      "PocketHost will own persist / snapshots later.",
+    ].join("\n"),
+    help: null,
+  };
+  CMDS.help = CMDS["aaha help"];
+  CMDS.status = CMDS["aaha status"];
+  CMDS.ident = CMDS["aaha ident"];
+  CMDS.mem = CMDS["aaha mem"];
+  CMDS.net = CMDS["aaha net"];
+  CMDS.lock = CMDS["aaha lock"];
+
+  function write(text, append) {
+    term.textContent = append ? (term.textContent + text) : text;
+    term.scrollTop = term.scrollHeight;
+  }
+
+  function prompt() {
+    write("\n\naaha@aaha:~# ", true);
+  }
+
+  function runCmd(raw) {
+    const cmd = String(raw || "").trim();
+    if (!cmd) return;
+    if (!booted) startDemo();
+    if (term.textContent.endsWith("aaha@aaha:~# ")) {
+      write(cmd, true);
+    } else {
+      write("\naaha@aaha:~# " + cmd, true);
+    }
+    if (cmd === "clear") {
+      write("aaha@aaha:~# ");
+      return;
+    }
+    const out = CMDS[cmd];
+    if (out) {
+      write("\n" + out, true);
+    } else {
+      write("\naaha: unknown command '" + cmd.replace(/^aaha\\s+/, "") + "'\n" + CMDS["aaha help"], true);
+    }
+    prompt();
+  }
+
+  function startDemo() {
+    booted = true;
+    toast.classList.add("show");
+    engineLabel.textContent = "web demo (not a live guest)";
+    statusCopy.innerHTML =
+      "Still <b>not running</b> a hypervisor. You are in a labeled web console replay of the real AahaOS serial.";
+    chips.hidden = false;
+    form.hidden = false;
+    write(BANNER);
+    prompt();
+    startBtn.textContent = "Replay banner";
+  }
+
+  startBtn.addEventListener("click", startDemo);
+  chips.addEventListener("click", function (e) {
+    const btn = e.target.closest("[data-cmd]");
+    if (btn) runCmd(btn.getAttribute("data-cmd"));
+  });
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    runCmd(input.value);
+    input.value = "";
+    input.focus();
+  });
+
+  if (/[?&]start=1/.test(location.search)) startDemo();
+})();
+</script>
+</body>
+</html>
