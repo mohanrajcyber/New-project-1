@@ -1,4 +1,4 @@
-PocketHost ↔ AahaOS image contract (v0.3)
+PocketHost ↔ AahaOS image contract (v0.4)
 ========================================
 
 Guest: AahaOS (custom embedded Linux). Not an ISO wizard.
@@ -8,6 +8,7 @@ Published phone images (public repo):
   dist/aarch64/vmlinuz
   dist/aarch64/core/initramfs.cpio.gz
   dist/aarch64/net/initramfs.cpio.gz
+  dist/aarch64/lab/initramfs.cpio.gz
 
 On-device paths after Termux wget (or a future host copy):
 
@@ -15,14 +16,19 @@ On-device paths after Termux wget (or a future host copy):
   files/aahaos/aarch64/vmlinuz
   files/aahaos/aarch64/initramfs.cpio.gz
 
-Variants (ours only): core | net
+Variants (ours only): core | net | lab
   core = console guest, local-only (no virtio-net)
-  net  = core + virtio-net + busybox udhcpc/ping (QEMU user DHCP)
+  net  = core + virtio-net + udhcpc + dropbear (QEMU user DHCP, hostfwd 2222→22)
+  lab  = net + extra applets (hexdump/od/strace/tcpdump if present)
+
+Persist: AAHA_DISK image is attached as virtio-blk and mounted at /data (vfat).
+Share: QEMU virtio-9p tag `aaha` → guest /share when 9p.ko is available.
 
 VmEngine reports Ready when this contract / bundled manifest is present.
 Ready does NOT mean QEMU is executing inside the APK.
 Start hands off to Termux. Status may be Handed off — never Running unless
-this process owns QEMU (it does not in v0.3).
+this process owns QEMU (it does not in v0.4). Serial tab is labeled
+"Serial (via Termux)" and is not a live guest.
 
 Phone boot: docs/TERMUX.md
 Build:  make image / make image-aarch64 / make publish-dist

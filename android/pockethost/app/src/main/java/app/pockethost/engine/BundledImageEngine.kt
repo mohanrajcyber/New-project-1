@@ -62,8 +62,21 @@ class BundledImageEngine(private val context: Context) : VmEngine {
         val mem = settings.ramMb
         val disk = settings.diskMb
         val variant = settings.variant
-        return "AAHA_VARIANT=$variant AAHA_MEM=$mem AAHA_DISK=$disk bash ~/termux-boot-aahaos.sh"
+        val raw = settings.lanRaw.trim()
+        val prefix = if (raw.isNotEmpty()) "AAHA_RAW=$raw " else ""
+        return "${prefix}AAHA_VARIANT=$variant AAHA_MEM=$mem AAHA_DISK=$disk bash ~/termux-boot-aahaos.sh"
     }
+
+    fun sshCommand(): String =
+        "ssh -p 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@127.0.0.1"
+
+    fun shareCommand(): String =
+        "curl -fsSL -o ~/share-aahaos.sh $SHARE_RAW && chmod +x ~/share-aahaos.sh && bash ~/share-aahaos.sh"
+
+    fun lastSerialHint(): String =
+        "Termux serial is live in the Termux session. Optional log:\n" +
+            "script -q ~/aahaos/serial.log bash ~/termux-boot-aahaos.sh\n" +
+            "This APK does not own QEMU. Paste that log here — it is not a live guest."
 
     fun fetchScriptCommand(): String =
         "pkg update && pkg install qemu-system-aarch64-headless wget && " +
@@ -190,5 +203,8 @@ class BundledImageEngine(private val context: Context) : VmEngine {
             "https://raw.githubusercontent.com/mohanrajcyber/New-project-1/main/scripts/termux-boot-aahaos.sh"
         const val TERMUX_BOOT =
             "AAHA_VARIANT=core AAHA_MEM=512 AAHA_DISK=64 bash ~/termux-boot-aahaos.sh"
+        const val SHARE_RAW =
+            "https://raw.githubusercontent.com/mohanrajcyber/New-project-1/main/scripts/share-aahaos.sh"
+        const val FDROID_TERMUX = "https://f-droid.org/packages/com.termux/"
     }
 }

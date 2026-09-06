@@ -8,9 +8,11 @@ DEST="${AAHA_DIR:-$HOME/aahaos}"
 VARIANT="${AAHA_VARIANT:-core}"
 MEM="${AAHA_MEM:-512}"
 DISK="${AAHA_DISK:-64}"
+SSH_PORT="${AAHA_SSH_PORT:-2222}"
+SHARE="${AAHA_SHARE:-$HOME/aaha-share}"
 
-if [[ "$VARIANT" != "core" && "$VARIANT" != "net" ]]; then
-    echo "AAHA_VARIANT must be core or net" >&2
+if [[ "$VARIANT" != "core" && "$VARIANT" != "net" && "$VARIANT" != "lab" ]]; then
+    echo "AAHA_VARIANT must be core, net, or lab" >&2
     exit 2
 fi
 
@@ -47,19 +49,38 @@ if [[ "$DISK" =~ ^[0-9]+$ ]] && [[ "$DISK" -gt 0 ]]; then
     if [[ ! -f "$DISKIMG" ]]; then
         echo "-- create persist disk ${DISK}M"
         dd if=/dev/zero of="$DISKIMG" bs=1M count="$DISK" status=none
+        if command -v mkfs.vfat >/dev/null 2>&1; then
+            mkfs.vfat -n AAHADATA "$DISKIMG" >/dev/null
+        elif command -v mkfs.ext2 >/dev/null 2>&1; then
+            mkfs.ext2 -F -L aaha-data "$DISKIMG" >/dev/null
+        else
+            echo "  (no mkfs.vfat — guest will format on first mount)"
+        fi
     fi
     drive=(-drive "file=${DISKIMG},if=virtio,format=raw")
-    echo "  disk    ${DISK}M $DISKIMG (not auto-mounted in guest v0.3)"
+    echo "  disk    ${DISK}M $DISKIMG -> guest /data"
 fi
 
 net=()
-if [[ "$VARIANT" == "net" ]]; then
-    net=(-netdev user,id=n0 -device virtio-net-pci,netdev=n0)
-    echo "  net     virtio-net + QEMU user (DHCP)"
+if [[ "$VARIANT" == "net" || "$VARIANT" == "lab" ]]; then
+    net=(-netdev "user,id=n0,hostfwd=tcp::${SSH_PORT}-:22" -device virtio-net-pci,netdev=n0)
+    echo "  net     virtio-net + QEMU user  ssh -p ${SSH_PORT} root@127.0.0.1"
 else
     echo "  net     core = local-only (no virtio-net)"
 fi
 
+share=()
+mkdir -p "$SHARE"
+if qemu-system-aarch64 -device virtio-9p-pci,help >/dev/null 2>&1 \
+    || qemu-system-aarch64 -device help 2>/dev/null | grep -q virtio-9p-pci; then
+    share=(-fsdev "local,id=aaha,path=${SHARE},security_model=none" \
+           -device virtio-9p-pci,fsdev=aaha,mount_tag=aaha)
+    echo "  share   $SHARE -> guest /share"
+else
+    echo "  share   skipped (this qemu has no virtio-9p-pci)"
+fi
+
+echo "  serial  Termux console. Optional log: script -q $DEST/serial.log $0"
 echo
 echo "Starting QEMU serial. You should see the AahaOS banner."
 echo "This is the guest. PocketHost is not pretending to run it."
@@ -74,5 +95,6 @@ exec qemu-system-aarch64 \
     -append "console=ttyAMA0 rdinit=/sbin/init panic=5" \
     "${drive[@]}" \
     "${net[@]}" \
+    "${share[@]}" \
     -nographic \
     -no-reboot

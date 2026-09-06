@@ -190,7 +190,7 @@
 
   <section class="card" id="guest">
     <div class="os-name">AahaOS</div>
-    <div class="meta">Embedded Linux · 0.3.0 · <span id="variantMeta">core</span></div>
+    <div class="meta">Embedded Linux · 0.4.0 · <span id="variantMeta">core</span></div>
     <div class="pill-row">
       <span class="dot">●</span>
       <span class="ready" id="statusLabel">Ready</span>
@@ -235,13 +235,37 @@
     <p class="honest">Saved in this browser. Same knobs exist in the PocketHost app. They become <code>-m</code> and a persist disk on the Termux QEMU line.</p>
     <label class="slide" for="ram">RAM <span id="ramLbl">512</span> MiB → qemu -m</label>
     <input id="ram" type="range" min="256" max="2048" step="128" value="512" />
-    <label class="slide" for="disk">Persist disk <span id="diskLbl">64</span> MiB (0 = none; not auto-mounted in v0.3)</label>
+    <label class="slide" for="disk">Persist disk <span id="diskLbl">64</span> MiB → guest /data (0 = none)</label>
     <input id="disk" type="range" min="0" max="1024" step="64" value="64" />
     <p class="honest" style="margin-top:12px">Guest variant</p>
     <div class="chips" style="margin-top:6px">
       <button class="chip on" type="button" data-variant="core">Core (local)</button>
-      <button class="chip" type="button" data-variant="net">Net (DHCP)</button>
+      <button class="chip" type="button" data-variant="net">Net (DHCP+ssh)</button>
+      <button class="chip" type="button" data-variant="lab">Lab</button>
     </div>
+    <p class="honest" style="margin-top:10px">RAM chips (also change the Termux command):</p>
+    <div class="chips" id="ramChips">
+      <button class="chip" type="button" data-ram="256">256</button>
+      <button class="chip" type="button" data-ram="512">512</button>
+      <button class="chip" type="button" data-ram="1024">1024</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Persist · SSH · share · lock</h2>
+    <p class="honest">
+      Live guest needs Termux/QEMU. This page does not run a hypervisor.
+      Persist: guest <code>/data</code> on the AAHA_DISK image (survives reboot).
+      SSH (Net/Lab): <code>ssh -p 2222 root@127.0.0.1</code> (blank password).
+      Share: <code>scripts/share-aahaos.sh</code> then set <code>AAHA_RAW=http://IP:8766</code>.
+      Lock: in-guest <code>aaha lock</code> remounts / ro; <code>aaha lock persist</code> openssl-tars /data.
+    </p>
+    <div class="mono" id="sshCmd">ssh -p 2222 -o StrictHostKeyChecking=no root@127.0.0.1</div>
+    <button class="act" id="copySsh" type="button">Copy ssh command</button>
+    <div class="mono" id="shareCmd"></div>
+    <button class="ghost" id="copyShare" type="button">Copy Share on LAN</button>
+    <label class="slide" for="lanRaw">Fetch from LAN (AAHA_RAW)</label>
+    <input id="lanRaw" type="text" placeholder="http://192.168.1.10:8766" style="width:100%;height:42px;border-radius:12px;border:1px solid var(--line);background:#0b1220;color:var(--paper);padding:0 12px;font-family:ui-monospace,monospace;font-size:13px" />
   </section>
 
   <section class="card">
@@ -264,7 +288,8 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
       <button class="chip" type="button" data-cmd="aaha ident">aaha ident</button>
       <button class="chip" type="button" data-cmd="aaha mem">aaha mem</button>
       <button class="chip" type="button" data-cmd="aaha net">aaha net</button>
-      <button class="chip" type="button" data-cmd="aaha lock">aaha lock</button>
+    <button class="chip" type="button" data-cmd="aaha lock">aaha lock</button>
+      <button class="chip" type="button" data-cmd="aaha lab">aaha lab</button>
       <button class="chip" type="button" data-cmd="clear">clear</button>
     </div>
     <form class="input-row" id="cmdForm" hidden>
@@ -286,7 +311,11 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
   const state = {
     ram: parseInt(store.getItem("aaha_ram") || "512", 10),
     disk: parseInt(store.getItem("aaha_disk") || "64", 10),
-    variant: store.getItem("aaha_variant") === "net" ? "net" : "core",
+    variant: (function () {
+      var v = store.getItem("aaha_variant") || "core";
+      return (v === "net" || v === "lab") ? v : "core";
+    })(),
+    lan: store.getItem("aaha_lan") || "",
     snaps: JSON.parse(store.getItem("aaha_snaps") || "[]"),
   };
 
@@ -299,9 +328,10 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
   const snapsEl = document.getElementById("snaps");
 
   function bootLine() {
+    var raw = state.lan ? ("AAHA_RAW=" + state.lan + " ") : "";
     return "pkg update && pkg install qemu-system-aarch64-headless wget && " +
       "curl -fsSL -o ~/termux-boot-aahaos.sh " + SCRIPT + " && chmod +x ~/termux-boot-aahaos.sh && " +
-      "AAHA_VARIANT=" + state.variant + " AAHA_MEM=" + state.ram + " AAHA_DISK=" + state.disk +
+      raw + "AAHA_VARIANT=" + state.variant + " AAHA_MEM=" + state.ram + " AAHA_DISK=" + state.disk +
       " bash ~/termux-boot-aahaos.sh";
   }
 
@@ -309,6 +339,16 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
     store.setItem("aaha_ram", String(state.ram));
     store.setItem("aaha_disk", String(state.disk));
     store.setItem("aaha_variant", state.variant);
+    store.setItem("aaha_lan", state.lan);
+    document.querySelectorAll("[data-ram]").forEach(function (btn) {
+      btn.classList.toggle("on", parseInt(btn.getAttribute("data-ram"), 10) === state.ram);
+    });
+    var lanEl = document.getElementById("lanRaw");
+    if (lanEl && lanEl.value !== state.lan) lanEl.value = state.lan;
+    var shareEl = document.getElementById("shareCmd");
+    if (shareEl) {
+      shareEl.textContent = "curl -fsSL -o ~/share-aahaos.sh https://raw.githubusercontent.com/mohanrajcyber/New-project-1/main/scripts/share-aahaos.sh && chmod +x ~/share-aahaos.sh && bash ~/share-aahaos.sh";
+    }
     store.setItem("aaha_snaps", JSON.stringify(state.snaps));
     ramEl.value = String(state.ram);
     diskEl.value = String(state.disk);
@@ -362,6 +402,31 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
   document.getElementById("copyScript").addEventListener("click", function () {
     navigator.clipboard.writeText(SCRIPT);
   });
+  document.querySelectorAll("[data-ram]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      state.ram = parseInt(btn.getAttribute("data-ram"), 10);
+      persist();
+    });
+  });
+  var lanInput = document.getElementById("lanRaw");
+  if (lanInput) {
+    lanInput.addEventListener("input", function () {
+      state.lan = lanInput.value.trim();
+      persist();
+    });
+  }
+  var copySsh = document.getElementById("copySsh");
+  if (copySsh) {
+    copySsh.addEventListener("click", function () {
+      navigator.clipboard.writeText("ssh -p 2222 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@127.0.0.1");
+    });
+  }
+  var copyShare = document.getElementById("copyShare");
+  if (copyShare) {
+    copyShare.addEventListener("click", function () {
+      navigator.clipboard.writeText(document.getElementById("shareCmd").textContent);
+    });
+  }
   persist();
 
   const term = document.getElementById("term");
@@ -376,7 +441,7 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
 
   function banner() {
     const v = state.variant;
-    const pretty = v === "net" ? "Net" : "Core";
+    const pretty = v === "lab" ? "Lab" : (v === "net" ? "Net" : "Core");
     return [
       "Run /sbin/init as init process",
       "",
@@ -391,40 +456,46 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
       "  |  ஆஹா! நம்ம OS                             |",
       "  +------------------------------------------+",
       "",
-      "  AahaOS 0.3.0  —  custom embedded Linux guest",
+      "  AahaOS 0.4.0  —  custom embedded Linux guest",
       "  hostname : aaha",
       "  variant  : " + v,
       "  kernel   : Linux 6.12.81-0-virt",
       "  machine  : aarch64  (replay — not live QEMU)",
-      "  root     : initramfs (ephemeral)",
-      "  login    : none — console only, no password, no sshd",
+      "  root     : initramfs + /data persist when AAHA_DISK is set",
+      "  login    : console; dropbear on Net/Lab (blank password)",
       "",
       "  Welcome to AahaOS — our guest, not a downloaded ISO.",
       "  ஆஹா! இது நம்ம OS. ரெடி.",
       "",
-      v === "net" ? "AahaOS Net: bringing up eth0 (DHCP via udhcpc)\n" : "",
+      (v === "net" || v === "lab") ? "AahaOS Net: bringing up eth0 (DHCP via udhcpc)\n" : "",
       "AahaOS identity",
       "---------------",
-      "product   : AahaOS 0.3.0",
-      "variant   : " + v + "  (Core = local, Net = virtio-net + DHCP)",
+      "product   : AahaOS 0.4.0",
+      "variant   : " + v + "  (Core = local, Net = DHCP+ssh, Lab = extra applets)",
       "hostname  : aaha",
       "ID=aahaos",
-      "VERSION_ID=0.3.0",
-      "PRETTY_NAME=\"AahaOS 0.3.0 (" + pretty + ")\"",
+      "VERSION_ID=0.4.0",
+      "PRETTY_NAME=\"AahaOS 0.4.0 (" + pretty + ")\"",
       "VARIANT=\"" + pretty + "\"",
       "prompt    : aaha@aaha",
-      "services  : none (no sshd, no getty login)",
+      "services  : dropbear on Net/Lab only; no getty login",
       "",
       "AahaOS shell. Try:  aaha status",
     ].join("\n");
   }
 
+  function prettyName() {
+    if (state.variant === "lab") return "Lab";
+    if (state.variant === "net") return "Net";
+    return "Core";
+  }
+
   function netOut() {
-    if (state.variant === "net") {
+    if (state.variant === "net" || state.variant === "lab") {
       return [
         "AahaOS net (local view)",
         "-----------------------",
-        "variant   : net",
+        "variant   : " + state.variant,
         "ifaces    : lo eth0",
         "Inter-|   Receive                                                |  Transmit",
         " face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed",
@@ -435,9 +506,10 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
         "Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask",
         "eth0    00000000        0202000A        0003    0       0       0       00000000",
         "",
-        "Net variant includes busybox udhcpc + ping. No port scan, no exploit tools.",
+        "SSH (Net/Lab): dropbear :22 — from host  ssh -p 2222 root@127.0.0.1",
+        "No port scan, no exploit tools.",
         "This command only lists what the kernel already exposes.",
-        "(Web replay of a typical QEMU user-net guest. Real phone: Termux script.)",
+        "(WEB DEMO replay — not a live guest. Real phone: Termux script.)",
       ].join("\n");
     }
     return [
@@ -465,7 +537,9 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
         "  ident    full identity (variant, os-release, machine)",
         "  mem      memory from /proc/meminfo (real)",
         "  net      local interfaces the kernel already exposes",
-        "  lock     read-only-root reminder + current mount flags",
+        "  lock     remount / read-only (changes /proc/mounts)",
+        "  lock persist     encrypt /data (openssl AES-256)",
+        "  lab      Lab tools menu",
         "  help     this text",
       ].join("\n"),
       "aaha status": [
@@ -473,45 +547,55 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
         "-------------",
         "os        : AahaOS (custom embedded Linux)",
         "not       : hypervisor clone, Windows, distro installer, from-scratch kernel",
-        "PRETTY_NAME=\"AahaOS 0.3.0 (" + (state.variant === "net" ? "Net" : "Core") + ")\"",
-        "VERSION_ID=0.3.0",
+        "PRETTY_NAME=\"AahaOS 0.4.0 (" + prettyName() + ")\"",
+        "VERSION_ID=0.4.0",
         "ID=aahaos",
-        "VARIANT=\"" + (state.variant === "net" ? "Net" : "Core") + "\"",
+        "VARIANT=\"" + prettyName() + "\"",
         "variant   : " + state.variant,
         "hostname  : aaha",
         "kernel    : Linux 6.12.81-0-virt (aarch64)",
-        "rootfs    : initramfs (ephemeral). Persist is a later host job.",
-        "auth      : no password login; console only.",
+        "persist   : /data mounted when AAHA_DISK is set (WEB DEMO)",
+        "auth      : console; dropbear on Net/Lab (blank password).",
       ].join("\n"),
       "aaha ident": [
         "AahaOS identity",
         "---------------",
-        "product   : AahaOS 0.3.0",
-        "variant   : " + state.variant + "  (Core = local, Net = virtio-net + DHCP)",
+        "product   : AahaOS 0.4.0",
+        "variant   : " + state.variant + "  (Core = local, Net = DHCP+ssh, Lab = extra applets)",
         "hostname  : aaha",
-        "PRETTY_NAME=\"AahaOS 0.3.0 (" + (state.variant === "net" ? "Net" : "Core") + ")\"",
-        "VERSION_ID=0.3.0",
+        "PRETTY_NAME=\"AahaOS 0.4.0 (" + prettyName() + ")\"",
+        "VERSION_ID=0.4.0",
         "ID=aahaos",
         "prompt    : aaha@aaha",
-        "services  : none (no sshd, no getty login)",
+        "services  : dropbear on Net/Lab only; no getty login",
       ].join("\n"),
       "aaha mem": [
         "AahaOS mem",
         "----------",
         "MemTotal:        " + (state.ram * 1024) + " kB",
         "MemFree:          " + Math.max(64, state.ram - 80) * 1024 + " kB",
-        "Source: /proc/meminfo (this guest replay). Not a host leak tool.",
+        "Source: /proc/meminfo (WEB DEMO replay — not live). Not a host leak tool.",
       ].join("\n"),
       "aaha net": netOut(),
       "aaha lock": [
         "aaha lock",
         "---------",
-        "Reminder: AahaOS v0.3 boots an ephemeral initramfs.",
-        "Reboot loses /tmp. No disk unlock secret, no password, no sshd.",
+        "WEB DEMO replay — this browser is not remounting a live root.",
+        "On a real guest, aaha lock remounts / read-only and changes /proc/mounts.",
         "Not a backdoor. Not a security boundary.",
         "",
-        "root mount: rootfs / (rootfs) rw (initramfs writable until reboot)",
-        "PocketHost snapshots are host-side metadata + optional initramfs copy.",
+        "root mount: rootfs / (rootfs) ro (DEMO)",
+      ].join("\n"),
+      "aaha lab": [
+        "AahaOS Lab",
+        "----------",
+        "PRETTY_NAME=\"AahaOS 0.4.0 (Lab)\"",
+        "variant    : lab",
+        "",
+        "Extra applets (WEB DEMO list, not a live guest):",
+        "  hexdump  yes",
+        "  od  yes",
+        "  Not a scanner. Not malware.",
       ].join("\n"),
     };
   }

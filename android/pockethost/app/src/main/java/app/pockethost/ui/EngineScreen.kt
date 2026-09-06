@@ -62,6 +62,43 @@ fun EngineScreen(engine: BundledImageEngine) {
             MonoBlock("asset    ${paths.contractAsset}")
         }
 
+        Spacer(Modifier.height(12.dp))
+        PhCard {
+            Text("Share on LAN / Fetch from LAN", color = Paper, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(8.dp))
+            MonoBlock(engine.shareCommand(), color = Accent)
+            Text(
+                "Serves dist/aarch64. Other phone: set AAHA_RAW=http://<ip>:8766 in More, or paste below.",
+                color = Mute,
+                fontSize = 13.sp,
+            )
+            androidx.compose.material3.OutlinedTextField(
+                value = engine.settings.lanRaw,
+                onValueChange = { engine.settings.lanRaw = it },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                label = { Text("Fetch from LAN (AAHA_RAW)") },
+                placeholder = { Text("http://192.168.1.10:8766") },
+            )
+            Button(
+                onClick = {
+                    clipboard.setText(AnnotatedString(engine.shareCommand()))
+                    Toast.makeText(ctx, "Copied share script", Toast.LENGTH_SHORT).show()
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Ink),
+                shape = RoundedCornerShape(12.dp),
+            ) { Text("Copy Share on LAN") }
+            Button(
+                onClick = {
+                    clipboard.setText(AnnotatedString(engine.sshCommand()))
+                    Toast.makeText(ctx, "Copied ssh", Toast.LENGTH_SHORT).show()
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Ink),
+                shape = RoundedCornerShape(12.dp),
+            ) { Text("Copy ssh command") }
+        }
+
         steps.forEach { step ->
             Spacer(Modifier.height(12.dp))
             PhCard {

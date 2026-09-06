@@ -77,31 +77,45 @@ fun SettingsScreen(engine: BundledImageEngine) {
                 modifier = Modifier.fillMaxWidth(),
             )
             Text(
-                "Guest root is still the initramfs. The disk file is created for later persist; v0.3 does not auto-mount it.",
+                "Guest mounts this image at /data (vfat). Files survive reboot.",
                 color = Mute,
                 fontSize = 13.sp,
             )
             Spacer(Modifier.height(12.dp))
-            Text("Variant", color = Paper, fontSize = 16.sp)
+            Text("RAM profiles → AAHA_MEM", color = Paper, fontSize = 16.sp)
             Row {
-                FilterChip(
-                    selected = variant == "core",
-                    onClick = {
-                        variant = "core"
-                        engine.settings.variant = "core"
-                    },
-                    label = { Text("Core") },
-                )
-                Spacer(Modifier.width(8.dp))
-                FilterChip(
-                    selected = variant == "net",
-                    onClick = {
-                        variant = "net"
-                        engine.settings.variant = "net"
-                    },
-                    label = { Text("Net") },
-                )
+                listOf(256, 512, 1024).forEach { mb ->
+                    FilterChip(
+                        selected = ram.toInt() == mb,
+                        onClick = {
+                            ram = mb.toFloat()
+                            engine.settings.ramMb = mb
+                        },
+                        label = { Text("${mb}") },
+                    )
+                    Spacer(Modifier.width(8.dp))
+                }
             }
+            Spacer(Modifier.height(12.dp))
+            Text("Guest variant → AAHA_VARIANT", color = Paper, fontSize = 16.sp)
+            Row {
+                listOf("core", "net", "lab").forEach { v ->
+                    FilterChip(
+                        selected = variant == v,
+                        onClick = {
+                            variant = v
+                            engine.settings.variant = v
+                        },
+                        label = { Text(v.replaceFirstChar { it.uppercase() }) },
+                    )
+                    Spacer(Modifier.width(8.dp))
+                }
+            }
+            Text(
+                "Core local · Net DHCP+ssh · Lab extra applets. Persist /data is mounted when AAHA_DISK > 0.",
+                color = Mute,
+                fontSize = 13.sp,
+            )
             MonoBlock(engine.qemuCommand())
         }
 
@@ -109,7 +123,7 @@ fun SettingsScreen(engine: BundledImageEngine) {
         PhCard {
             Text("About", color = Paper, fontSize = 16.sp)
             Spacer(Modifier.height(8.dp))
-            Text("PocketHost 0.3  ·  guest ${manifest?.os ?: "AahaOS"} ${manifest?.version ?: ""}", color = Mute, fontSize = 13.sp)
+            Text("PocketHost 0.4  ·  guest ${manifest?.os ?: "AahaOS"} ${manifest?.version ?: ""}", color = Mute, fontSize = 13.sp)
             Text("Not a hypervisor brand. Not Windows. MIT userspace + Linux kernel.", color = Mute, fontSize = 13.sp)
         }
     }

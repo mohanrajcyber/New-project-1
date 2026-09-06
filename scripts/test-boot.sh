@@ -35,8 +35,8 @@ extra=()
 if [[ "$ARCH" == "aarch64" ]]; then
     extra+=(-cpu "${QEMU_CPU}")
 fi
-if [[ "$VARIANT" == "net" ]]; then
-    extra+=(-netdev user,id=n0 -device virtio-net-pci,netdev=n0)
+if [[ "$VARIANT" == "net" || "$VARIANT" == "lab" ]]; then
+    extra+=(-netdev user,id=n0,hostfwd=tcp::2222-:22 -device virtio-net-pci,netdev=n0)
 fi
 
 echo "== serial boot test (${ARCH} ${VARIANT})"
@@ -64,7 +64,7 @@ trap cleanup EXIT
 
 ok=0
 need_net=0
-[[ "$VARIANT" == "net" ]] && need_net=1
+[[ "$VARIANT" == "net" || "$VARIANT" == "lab" ]] && need_net=1
 for _ in $(seq 1 90); do
     if [[ -f "$LOG" ]] \
         && grep -q "AahaOS" "$LOG" \
@@ -106,4 +106,12 @@ fi
 echo "PASS: AahaOS banner + Tamil MOTD + ident on ${ARCH} ${VARIANT} serial"
 if [[ "$need_net" -eq 1 ]]; then
     echo "PASS: Net variant serial shows a non-lo iface (virtio-net + QEMU user)"
+fi
+if [[ "$VARIANT" == "lab" ]]; then
+    if grep -q 'PRETTY_NAME="AahaOS .* (Lab)"' "$LOG"; then
+        echo "PASS: Lab PRETTY_NAME on serial"
+    else
+        echo "FAIL: Lab image missing distinct PRETTY_NAME" >&2
+        exit 1
+    fi
 fi

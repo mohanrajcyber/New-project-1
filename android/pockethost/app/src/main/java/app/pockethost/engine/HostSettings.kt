@@ -17,12 +17,31 @@ class HostSettings(context: Context) {
     var variant: String
         get() = prefs.getString(KEY_VARIANT, "core") ?: "core"
         set(value) {
-            prefs.edit().putString(KEY_VARIANT, if (value == "net") "net" else "core").apply()
+            val v = when (value) {
+                "net", "lab" -> value
+                else -> "core"
+            }
+            prefs.edit().putString(KEY_VARIANT, v).apply()
         }
+
+    var lanRaw: String
+        get() = prefs.getString(KEY_LAN, "") ?: ""
+        set(value) { prefs.edit().putString(KEY_LAN, value).apply() }
+
+    var wizardDone: Boolean
+        get() = prefs.getBoolean(KEY_WIZ, false)
+        set(value) { prefs.edit().putBoolean(KEY_WIZ, value).apply() }
+
+    var termuxReady: Boolean
+        get() = prefs.getBoolean(KEY_TX, false)
+        set(value) { prefs.edit().putBoolean(KEY_TX, value).apply() }
 
     companion object {
         private const val KEY_RAM = "ram_mb"
         private const val KEY_DISK = "disk_mb"
         private const val KEY_VARIANT = "variant"
+        private const val KEY_LAN = "lan_raw"
+        private const val KEY_WIZ = "wizard_done"
+        private const val KEY_TX = "termux_ready"
     }
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build an AahaOS bootable initramfs + fetch the Linux kernel for QEMU.
 # Usage: build-image.sh [arch] [variant]
-#   variant: core (default) or net
+#   variant: core | net | lab
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -21,8 +21,8 @@ if [[ ! -f "$CFG" ]]; then
     echo "unknown arch: $ARCH" >&2
     exit 2
 fi
-if [[ "$VARIANT" != "core" && "$VARIANT" != "net" ]]; then
-    echo "unknown variant: $VARIANT (core|net)" >&2
+if [[ "$VARIANT" != "core" && "$VARIANT" != "net" && "$VARIANT" != "lab" ]]; then
+    echo "unknown variant: $VARIANT (core|net|lab)" >&2
     exit 2
 fi
 
@@ -32,7 +32,7 @@ echo "== AahaOS ${VERSION} ${VARIANT} image (${ARCH})"
 "$ROOT/scripts/fetch-busybox.sh" "$ARCH"
 
 rm -rf "$STAGING"
-mkdir -p "$STAGING"/{bin,sbin,usr/bin,usr/sbin,etc/aaha,proc,sys,dev,tmp,run,root,home/aaha}
+mkdir -p "$STAGING"/{bin,sbin,usr/bin,usr/sbin,etc/aaha,proc,sys,dev,tmp,run,root,home/aaha,data,share,usr/lib/aaha,var/run,var/log,lib}
 
 cp -f "$ROOT/build/${ARCH}/busybox" "$STAGING/bin/busybox"
 chmod 0755 "$STAGING/bin/busybox"
@@ -40,10 +40,14 @@ applets=(
     sh ash ls cat echo printf pwd mkdir mount umount hostname
     uname dmesg sleep reboot poweroff halt clear cp mv rm ln
     chmod chown grep sed awk head tail wc ps kill tr
-    ip ifconfig lsmod
+    ip ifconfig lsmod insmod rmmod find tar sync
+    mke2fs mkfs.ext2 pidof pgrep
 )
-if [[ "$VARIANT" == "net" ]]; then
-    applets+=(udhcpc ping route wget insmod lsmod rmmod)
+if [[ "$VARIANT" == "net" || "$VARIANT" == "lab" ]]; then
+    applets+=(udhcpc ping route wget nc)
+fi
+if [[ "$VARIANT" == "lab" ]]; then
+    applets+=(hexdump od strings xxd)
 fi
 for a in "${applets[@]}"; do
     ln -sf busybox "$STAGING/bin/$a"
@@ -51,7 +55,8 @@ done
 ln -sf ../bin/busybox "$STAGING/sbin/reboot"
 ln -sf ../bin/busybox "$STAGING/sbin/poweroff"
 ln -sf ../bin/busybox "$STAGING/sbin/halt"
-if [[ "$VARIANT" == "net" ]]; then
+ln -sf ../bin/busybox "$STAGING/sbin/mke2fs"
+if [[ "$VARIANT" == "net" || "$VARIANT" == "lab" ]]; then
     ln -sf ../bin/busybox "$STAGING/sbin/udhcpc"
 fi
 
@@ -59,37 +64,56 @@ cp -a "$ROOT/os/rootfs-overlay/." "$STAGING/"
 if [[ -d "$ROOT/os/variants/${VARIANT}" ]]; then
     cp -a "$ROOT/os/variants/${VARIANT}/." "$STAGING/"
 fi
+# net overlay (udhcpc script) also used by lab
+if [[ "$VARIANT" == "lab" && -d "$ROOT/os/variants/net" ]]; then
+    cp -a "$ROOT/os/variants/net/." "$STAGING/"
+fi
 printf '%s\n' "$VERSION" > "$STAGING/etc/aaha/version"
 printf '%s\n' "$VARIANT" > "$STAGING/etc/aaha/variant"
 
-pretty="AahaOS ${VERSION} (${VARIANT^})"
-# portable title-case for core/net
 case "$VARIANT" in
-    core) pretty="AahaOS ${VERSION} (Core)" ;;
-    net) pretty="AahaOS ${VERSION} (Net)" ;;
+    core) pretty="AahaOS ${VERSION} (Core)"; vpretty=Core ;;
+    net) pretty="AahaOS ${VERSION} (Net)"; vpretty=Net ;;
+    lab) pretty="AahaOS ${VERSION} (Lab)"; vpretty=Lab ;;
 esac
 sed -i \
     -e "s/^VERSION=.*/VERSION=\"${VERSION}\"/" \
     -e "s/^VERSION_ID=.*/VERSION_ID=${VERSION}/" \
     -e "s/^PRETTY_NAME=.*/PRETTY_NAME=\"${pretty}\"/" \
-    -e "s/^VARIANT=.*/VARIANT=\"${VARIANT^}\"/" \
+    -e "s/^VARIANT=.*/VARIANT=\"${vpretty}\"/" \
     -e "s/^VARIANT_ID=.*/VARIANT_ID=${VARIANT}/" \
     -e "s/^IMAGE_VERSION=.*/IMAGE_VERSION=${VERSION}/" \
     "$STAGING/etc/os-release"
-# VARIANT^ may not work on bash < 4; rewrite pretty lines already set.
-if [[ "$VARIANT" == "core" ]]; then
-    sed -i 's/^VARIANT=.*/VARIANT="Core"/; s/^PRETTY_NAME=.*/PRETTY_NAME="AahaOS '"${VERSION}"' (Core)"/' "$STAGING/etc/os-release"
+sed -i \
+    -e "s/^VARIANT=.*/VARIANT=\"${vpretty}\"/" \
+    -e "s/^PRETTY_NAME=.*/PRETTY_NAME=\"${pretty}\"/" \
+    "$STAGING/etc/os-release"
+
+chmod 0755 "$STAGING/usr/share/udhcpc/default.script" 2>/dev/null || true
+
+"$ROOT/scripts/fetch-virtio-modules.sh" "$ARCH"
+mkdir -p "$STAGING/lib/modules/aaha"
+cp -f "$ROOT/build/${ARCH}/virtio-modules/"*.ko "$STAGING/lib/modules/aaha/"
+echo "-- bundled virtio modules (same kernel, GPL-2.0)"
+
+if [[ "$VARIANT" == "net" || "$VARIANT" == "lab" ]]; then
+    "$ROOT/scripts/fetch-guest-bins.sh" "$ARCH" "$VARIANT"
+    if [[ -d "$ROOT/build/${ARCH}/guest-bins/root" ]]; then
+        cp -a "$ROOT/build/${ARCH}/guest-bins/root/." "$STAGING/"
+        echo "-- dropbear/openssl/musl (Alpine-built tools, AahaOS identity)"
+    fi
 else
-    sed -i 's/^VARIANT=.*/VARIANT="Net"/; s/^PRETTY_NAME=.*/PRETTY_NAME="AahaOS '"${VERSION}"' (Net)"/' "$STAGING/etc/os-release"
+    # openssl for persist lock on Core too
+    "$ROOT/scripts/fetch-guest-bins.sh" "$ARCH" ""
+    if [[ -d "$ROOT/build/${ARCH}/guest-bins/root" ]]; then
+        cp -a "$ROOT/build/${ARCH}/guest-bins/root/." "$STAGING/"
+    fi
 fi
 
-if [[ "$VARIANT" == "net" ]]; then
-    chmod 0755 "$STAGING/usr/share/udhcpc/default.script" 2>/dev/null || true
-    "$ROOT/scripts/fetch-virtio-modules.sh" "$ARCH"
-    mkdir -p "$STAGING/lib/modules/aaha"
-    cp -f "$ROOT/build/${ARCH}/virtio-modules/"*.ko "$STAGING/lib/modules/aaha/"
-    echo "-- bundled virtio-net modules (same kernel, GPL-2.0)"
-fi
+cp -f "$ROOT/os/bringup.sh" "$STAGING/usr/lib/aaha/bringup.sh"
+chmod 0755 "$STAGING/usr/lib/aaha/bringup.sh"
+cp -f "$ROOT/os/aaha.sh" "$STAGING/usr/lib/aaha/aaha.sh"
+chmod 0755 "$STAGING/usr/lib/aaha/aaha.sh"
 
 if [[ "$ARCH" == "$(uname -m)" ]]; then
     echo "-- compiling aaha-init and aaha CLI (static)"
@@ -116,13 +140,12 @@ cat > "$STAGING/usr/share/aaha/manifest.json" <<EOF
   "variant": "${VARIANT}",
   "kind": "embedded-linux",
   "hostname": "aaha",
-  "root": "initramfs",
+  "root": "initramfs+persist",
   "not": ["windows", "hypervisor-clone", "generic-iso", "from-scratch-kernel"]
 }
 EOF
 
 mkdir -p "$OUT_DIR"
-# Reuse the already-fetched kernel for this arch.
 if [[ ! -f "$OUT_DIR/vmlinuz" ]]; then
     if [[ -f "$ROOT/images/${ARCH}/vmlinuz" ]]; then
         ln -f "$ROOT/images/${ARCH}/vmlinuz" "$OUT_DIR/vmlinuz" 2>/dev/null \

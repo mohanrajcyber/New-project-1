@@ -44,8 +44,8 @@ echo "  hostname : $HOSTNAME"
 echo "  variant  : $VARIANT"
 echo "  kernel   : $(uname -s) $(uname -r)"
 echo "  machine  : $(uname -m)"
-echo "  root     : initramfs (ephemeral, treat as read-only story)"
-echo "  login    : none — console only, no password, no sshd"
+echo "  root     : initramfs + /data persist when AAHA_DISK is set"
+echo "  login    : console; dropbear on Net/Lab (blank password, host :2222)"
 echo
 if [ -f /etc/motd ]; then
     cat /etc/motd
@@ -58,34 +58,8 @@ if [ -x /usr/bin/aaha ]; then
     echo
 fi
 
-if [ "$VARIANT" = "net" ]; then
-    ip link set lo up 2>/dev/null || true
-    if [ -f /lib/modules/aaha/virtio_net.ko ]; then
-        insmod /lib/modules/aaha/af_packet.ko 2>/dev/null || true
-        insmod /lib/modules/aaha/failover.ko 2>/dev/null || true
-        insmod /lib/modules/aaha/net_failover.ko 2>/dev/null || true
-        insmod /lib/modules/aaha/virtio_net.ko 2>/dev/null || true
-    fi
-    IFACE=""
-    n=0
-    while [ "$n" -lt 8 ]; do
-        IFACE=$(ls /sys/class/net 2>/dev/null | grep -v '^lo$' | head -n 1)
-        [ -n "$IFACE" ] && break
-        n=$((n + 1))
-        sleep 1
-    done
-    if [ -n "$IFACE" ]; then
-        echo "AahaOS Net: bringing up $IFACE (DHCP via udhcpc)"
-        ip link set "$IFACE" up 2>/dev/null || true
-        if [ -x /sbin/udhcpc ] || [ -x /bin/udhcpc ]; then
-            udhcpc -i "$IFACE" -s /usr/share/udhcpc/default.script -q -t 6 -T 2 || true
-        fi
-        /usr/bin/aaha net || true
-        echo
-    else
-        echo "AahaOS Net: no interface besides lo (need QEMU virtio-net)."
-        echo
-    fi
+if [ -x /usr/lib/aaha/bringup.sh ]; then
+    /bin/sh /usr/lib/aaha/bringup.sh
 fi
 
 # PID 1 must not exit.

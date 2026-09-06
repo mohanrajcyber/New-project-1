@@ -1,36 +1,54 @@
-# Phone boot (Termux)
+# Phone boot (Termux) — AahaOS 0.4
 
-Boots **our** aarch64 AahaOS image — not a random ISO.
-
-Repo is public. Images live at `dist/aarch64/` on `main`.
+Boots **our** aarch64 image. Repo is public.
 
 ```bash
 pkg update
 pkg install qemu-system-aarch64-headless wget
+# optional persist format on the phone:
+pkg install dosfstools
 curl -fsSL -o ~/termux-boot-aahaos.sh \
   https://raw.githubusercontent.com/mohanrajcyber/New-project-1/main/scripts/termux-boot-aahaos.sh
 chmod +x ~/termux-boot-aahaos.sh
-bash ~/termux-boot-aahaos.sh
 ```
 
-Net guest (DHCP over QEMU user-net + virtio-net):
+**Core** (local, persist `/data` if `AAHA_DISK>0`):
+
+```bash
+AAHA_VARIANT=core AAHA_MEM=512 AAHA_DISK=64 bash ~/termux-boot-aahaos.sh
+```
+
+**Net** (DHCP + dropbear, host `2222→22`):
 
 ```bash
 AAHA_VARIANT=net AAHA_MEM=512 AAHA_DISK=64 bash ~/termux-boot-aahaos.sh
+# other Termux session:
+ssh -p 2222 -o StrictHostKeyChecking=no root@127.0.0.1
+# blank password
 ```
 
-You should see the AahaOS banner and `aaha@aaha`.  
-On Net: `aaha net` should list `eth0` (or similar) in addition to `lo`.  
-Quit QEMU with `Ctrl-A x`.
+**Lab** (Net + extra applets, `PRETTY_NAME` Lab):
 
-The script wget's:
+```bash
+AAHA_VARIANT=lab AAHA_MEM=512 AAHA_DISK=64 bash ~/termux-boot-aahaos.sh
+```
 
-- https://raw.githubusercontent.com/mohanrajcyber/New-project-1/main/dist/aarch64/vmlinuz
-- https://raw.githubusercontent.com/mohanrajcyber/New-project-1/main/dist/aarch64/core/initramfs.cpio.gz
-- or `.../net/initramfs.cpio.gz` when `AAHA_VARIANT=net`
+**Share on LAN** (second phone, same Wi-Fi):
 
-Same files are also on Pages: https://mohanrajcyber.github.io/New-project-1/dist/aarch64/
+```bash
+curl -fsSL -o ~/share-aahaos.sh \
+  https://raw.githubusercontent.com/mohanrajcyber/New-project-1/main/scripts/share-aahaos.sh
+bash ~/share-aahaos.sh
+# on the other phone:
+AAHA_RAW=http://PHONE_IP:8766 AAHA_VARIANT=core bash ~/termux-boot-aahaos.sh
+```
 
-`AAHA_MEM` becomes `qemu -m`. `AAHA_DISK` (MiB, 0 = skip) creates `persist-<variant>.img`. v0.3 does not auto-mount that disk inside the guest.
+**Serial log** (optional, for PocketHost paste):
 
-PocketHost Start can copy this command or hand off to Termux. It will not claim the guest is running inside the APK.
+```bash
+script -q ~/aahaos/serial.log bash ~/termux-boot-aahaos.sh
+```
+
+Inside the guest: `aaha lock` remounts `/` ro. `aaha lock persist` / `aaha unlock persist` openssl-tars `/data`. Host share dir `~/aaha-share` is passed as virtio-9p; this kernel’s netboot modules have **no 9p.ko**, so `/share` may stay unmounted (QEMU args are still shipped).
+
+Quit QEMU: `Ctrl-A x`.

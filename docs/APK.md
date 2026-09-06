@@ -1,36 +1,22 @@
 # PocketHost APK
 
-Gradle project: `android/pockethost`  
-package `app.pockethost` · minSdk 26 · versionName 0.3.0
+Gradle: `android/pockethost` · `app.pockethost` · minSdk 26 · versionName **0.4.0**
 
-## Build on a machine with Android SDK
+## DEV release (this repo)
+
+`dev-keystore.jks` is a **clearly labeled development key**, password `aahaosdev`.
+Not a Play Store key.
 
 ```bash
 cd android/pockethost
-# create local.properties with:  sdk.dir=/path/to/Android/Sdk
-./gradlew :app:assembleDebug
-# unsigned debug APK:
-#   app/build/outputs/apk/debug/app-debug.apk
-./gradlew :app:bundleRelease
-# AAB (needs a signing config you add locally):
-#   app/build/outputs/bundle/release/app-release.aab
+echo "sdk.dir=/path/to/Android/Sdk" > local.properties
+./gradlew :app:assembleRelease
+# app/build/outputs/apk/release/app-release.apk
 ```
 
-Sideload the debug APK (USB debugging or “install unknown apps”).
-
-A debug APK from this environment is committed at
-`dist/android/pockethost-debug.apk` (see `docs/APK-STATUS.txt`).
-
-## This cloud VM
-
-See the “SDK status” note written when 0.3 was built (`docs/APK-STATUS.txt` if present).
-The wrapper and project are valid either way. Missing SDK is an environment limit,
-not a broken Gradle tree.
+Sideload copy in git: `dist/android/pockethost-debug.apk` (updated on each ship).
 
 ## What Start does
 
-1. Detects Termux (`com.termux`) via package queries.
-2. Copies the boot command (RAM / disk / variant from Settings).
-3. Tries `com.termux.RUN_COMMAND`, else launches Termux.
-4. Status: **Ready** · **Starting** · **Handed to Termux** · **Unavailable**.
-   Never **Running** — this APK does not embed QEMU.
+Hands off to Termux. Status Ready / Starting / Handed off / Unavailable.
+Never Running unless this process owns QEMU (it does not).

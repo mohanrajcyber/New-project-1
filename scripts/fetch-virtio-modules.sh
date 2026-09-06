@@ -52,14 +52,20 @@ rm -rf "$DEST"
 mkdir -p "$DEST"
 mapfile -t kos < <(find "$extract" -type f \( \
     -name 'virtio_net.ko' -o -name 'net_failover.ko' -o -name 'failover.ko' \
-    -o -name 'af_packet.ko' \))
-if [[ "${#kos[@]}" -lt 4 ]]; then
-    echo "expected virtio_net + net_failover + failover + af_packet" >&2
-    find "$extract" -name '*virtio_net*' -o -name '*failover*' >&2 || true
+    -o -name 'af_packet.ko' -o -name 'virtio_blk.ko' \
+    -o -name '9p.ko' -o -name '9pnet.ko' -o -name '9pnet_virtio.ko' \
+    -o -name 'ext2.ko' -o -name 'ext4.ko' -o -name 'fat.ko' -o -name 'vfat.ko' \
+    -o -name 'nls_cp437.ko' -o -name 'nls_iso8859-1.ko' \))
+if [[ "${#kos[@]}" -lt 5 ]]; then
+    echo "expected virtio_net + virtio_blk + failover stack" >&2
+    find "$extract" -name '*virtio*' -o -name '*failover*' >&2 || true
     exit 1
 fi
 for ko in "${kos[@]}"; do
     cp -f "$ko" "$DEST/$(basename "$ko")"
 done
+if [[ ! -f "$DEST/9p.ko" ]]; then
+    echo "note: 9p.ko not in this netboot initramfs (guest 9p mount may fail)"
+fi
 echo "virtio modules -> $DEST"
 ls -l "$DEST"

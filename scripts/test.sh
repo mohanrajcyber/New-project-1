@@ -29,5 +29,12 @@ echo "== boot aarch64 net (phone-class Net image)"
 ./scripts/build-image.sh aarch64 net
 ./scripts/test-boot.sh aarch64 net
 
+echo "== boot x86_64 lab"
+./scripts/build-image.sh x86_64 lab
+./scripts/test-boot.sh x86_64 lab
+
+echo "== feature proofs (persist / lock / lab)"
+./scripts/test-features.sh x86_64
+
 echo
-echo "PASS: make test (x86_64/aarch64 core + x86_64/aarch64 net)"
+echo "PASS: make test (core/net/lab + persist/lock)"

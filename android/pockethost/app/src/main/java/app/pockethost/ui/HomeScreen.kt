@@ -3,7 +3,9 @@ package app.pockethost.ui
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -50,6 +53,8 @@ fun HomeScreen(engine: BundledImageEngine, onOpenEngine: () -> Unit) {
     val clipboard = LocalClipboardManager.current
     val ctx = LocalContext.current
     val termux = remember { engine.termuxInstalled() }
+    var variant by remember { mutableStateOf(engine.settings.variant) }
+    var ram by remember { mutableStateOf(engine.settings.ramMb) }
 
     Column(
         modifier = Modifier
@@ -81,12 +86,39 @@ fun HomeScreen(engine: BundledImageEngine, onOpenEngine: () -> Unit) {
                     fontFamily = FontFamily.Monospace,
                 )
                 Text(
-                    "Embedded Linux  ·  ${manifest?.version ?: "0.3.0"}  ·  ${engine.settings.variant}",
+                    "Embedded Linux  ·  ${manifest?.version ?: "0.4.0"}  ·  $variant",
                     color = Mute,
                     fontSize = 13.sp,
                     modifier = Modifier.padding(top = 4.dp),
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(10.dp))
+                Row {
+                    listOf("core", "net", "lab").forEach { v ->
+                        FilterChip(
+                            selected = variant == v,
+                            onClick = {
+                                variant = v
+                                engine.settings.variant = v
+                            },
+                            label = { Text(v.replaceFirstChar { it.uppercase() }) },
+                        )
+                        Spacer(Modifier.width(6.dp))
+                    }
+                }
+                Row {
+                    listOf(256, 512, 1024).forEach { mb ->
+                        FilterChip(
+                            selected = ram == mb,
+                            onClick = {
+                                ram = mb
+                                engine.settings.ramMb = mb
+                            },
+                            label = { Text("${mb}M") },
+                        )
+                        Spacer(Modifier.width(6.dp))
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
                 StatusPill(status)
                 Spacer(Modifier.height(10.dp))
                 Text(
@@ -102,7 +134,7 @@ fun HomeScreen(engine: BundledImageEngine, onOpenEngine: () -> Unit) {
                 )
                 Spacer(Modifier.height(8.dp))
                 MonoBlock("Termux ${if (termux) "installed" else "not installed"}")
-                MonoBlock("ram ${engine.settings.ramMb}M  disk ${engine.settings.diskMb}M")
+                MonoBlock("ram ${ram}M  disk ${engine.settings.diskMb}M  $variant")
                 MonoBlock("on-device  ${paths.onDeviceRoot}")
                 Spacer(Modifier.height(20.dp))
                 Button(
