@@ -17,6 +17,8 @@ Usage: aaha <command>
   unlock           remount / read-write
   unlock persist   decrypt /data vault
   lab      Lab tools menu (Lab variant)
+  study    Study menu (authorized classroom tools)
+  lesson   1–4  run a Study lesson against this guest
   help     this text
 EOF
 }
@@ -61,7 +63,7 @@ cmd_ident() {
     echo "AahaOS identity"
     echo "---------------"
     echo "product   : AahaOS $(cat /etc/aaha/version 2>/dev/null || echo 0.4.0)"
-    echo "variant   : $(variant)  (Core = local, Net = DHCP+ssh, Lab = Net + extra applets)"
+    echo "variant   : $(variant)  (Core / Net / Lab / Study)"
     echo "hostname  : $(hostname 2>/dev/null || echo aaha)"
     os_keys
     echo "uname     : $(uname -a)"
@@ -98,8 +100,18 @@ cmd_net() {
         echo "no /proc/net/dev — proc not mounted?"
     fi
     echo
-    echo "SSH (Net/Lab): dropbear :22 — from host  ssh -p 2222 root@127.0.0.1"
+    echo "SSH (Net/Lab/Study): dropbear :22 — from host  ssh -p 2222 root@127.0.0.1"
     echo "This command only lists what the kernel already exposes."
+}
+
+ethics() {
+    echo
+    if [ -f /etc/aaha/ethics ]; then
+        cat /etc/aaha/ethics
+    else
+        echo "Authorized use only. Only systems you own or have written permission to test."
+    fi
+    echo
 }
 
 root_flags() {
@@ -243,6 +255,121 @@ cmd_lab() {
     echo "Not a scanner. Not malware."
 }
 
+cmd_study() {
+    echo "AahaOS Study"
+    echo "------------"
+    ethics
+    echo "PRETTY_NAME=$(grep ^PRETTY_NAME= /etc/os-release 2>/dev/null || echo unknown)"
+    echo "variant    : $(variant)"
+    echo
+    echo "Classroom applets (this guest only — not Kali, not an attack suite):"
+    for t in hexdump od nc wget ping tcpdump strace sha256sum traceroute openssl; do
+        if command -v "$t" >/dev/null 2>&1; then
+            echo "  $t  yes"
+        else
+            echo "  $t  no"
+        fi
+    done
+    echo
+    echo "Lessons (run inside this guest, against this guest):"
+    echo "  aaha lesson 1   identity / kernel / mounts"
+    echo "  aaha lesson 2   hash a file you create"
+    echo "  aaha lesson 3   loopback traffic (tcpdump or explain)"
+    echo "  aaha lesson 4   read-only lock + persist encrypt reminder"
+    echo
+    echo "No nmap. No exploit kits. No wordlists. Not a Kali clone."
+}
+
+lesson1() {
+    echo "Lesson 1 — who is this guest?"
+    echo "Observe: PRETTY_NAME, kernel, mounts. This is YOUR VM."
+    /usr/bin/aaha ident 2>/dev/null || cmd_ident
+    echo
+    echo "--- /proc/mounts (first lines) ---"
+    head -n 8 /proc/mounts 2>/dev/null || true
+    echo
+    echo "What to notice: hostname aaha, our os-release, /data if persist mounted."
+}
+
+lesson2() {
+    echo "Lesson 2 — hash a file you own"
+    echo "Observe: SHA-256 of a file you just created. Not cracking. Not other machines."
+    DIR=/tmp
+    grep -q ' /data ' /proc/mounts 2>/dev/null && DIR=/data
+    FN="$DIR/aaha-lesson2.txt"
+    echo "AahaOS study note $(date +%s)" > "$FN"
+    echo "created   : $FN"
+    echo "contents  : $(cat "$FN")"
+    if command -v openssl >/dev/null 2>&1; then
+        echo -n "openssl   : "
+        openssl dgst -sha256 "$FN"
+    fi
+    if command -v sha256sum >/dev/null 2>&1; then
+        echo -n "sha256sum : "
+        sha256sum "$FN"
+    fi
+    echo
+    echo "What to notice: same digest from openssl and sha256sum when both exist."
+}
+
+lesson3() {
+    echo "Lesson 3 — loopback only"
+    echo "Observe: packets on lo (127.0.0.1). Never point this at someone else's host."
+    ip link set lo up 2>/dev/null || true
+    echo "--- ping 127.0.0.1 ---"
+    if command -v ping >/dev/null 2>&1; then
+        ping -c 1 127.0.0.1 2>/dev/null || ping -c 1 -W 2 127.0.0.1 || true
+    else
+        echo "ping applet not in this image"
+    fi
+    if command -v tcpdump >/dev/null 2>&1; then
+        echo "--- tcpdump -i lo -c 2 (localhost) ---"
+        ping -c 2 127.0.0.1 >/dev/null 2>&1 &
+        tcpdump -i lo -c 2 -n 2>/dev/null || tcpdump -i lo -c 2 2>/dev/null || \
+            echo "tcpdump ran; if empty, lo produced no capture in this window."
+        wait 2>/dev/null || true
+    else
+        echo "tcpdump not in this image. On Study/Lab it is bundled when size allows."
+        echo "You would run: tcpdump -i lo -c 4   and ping 127.0.0.1"
+    fi
+    echo
+    echo "What to notice: ICMP or any lo packets are this guest talking to itself."
+}
+
+lesson4() {
+    echo "Lesson 4 — lock this guest's own root"
+    echo "Observe: /proc/mounts flags change to ro. Then we unlock so you can keep working."
+    cmd_lock
+    echo
+    echo "Persist encrypt is optional and local:"
+    echo "  aaha lock persist    openssl-tar /data (passphrase you choose)"
+    echo "  aaha unlock persist  decrypt that vault"
+    echo "Not a backdoor. Not for other people's disks."
+    echo
+    cmd_unlock
+    echo
+    echo "What to notice: root flags went ro, then rw. Persist encrypt needs /data mounted."
+}
+
+cmd_lesson() {
+    ethics
+    n="${1:-}"
+    case "$n" in
+        1) lesson1 ;;
+        2) lesson2 ;;
+        3) lesson3 ;;
+        4) lesson4 ;;
+        ""|list|help)
+            echo "aaha lesson 1|2|3|4"
+            echo "  1 identity   2 hash own file   3 loopback   4 lock"
+            ;;
+        *)
+            echo "aaha lesson: unknown '$n' (use 1-4)" >&2
+            exit 1
+            ;;
+    esac
+}
+
 cmd="${1:-}"
 sub="${2:-}"
 case "$cmd" in
@@ -265,6 +392,8 @@ case "$cmd" in
         fi
         ;;
     lab) cmd_lab ;;
+    study) cmd_study ;;
+    lesson) cmd_lesson "$sub" ;;
     help|-h|--help) usage ;;
     "") usage; exit 1 ;;
     *) echo "aaha: unknown command '$cmd'" >&2; usage; exit 1 ;;

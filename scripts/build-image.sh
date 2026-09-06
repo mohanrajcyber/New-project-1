@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build an AahaOS bootable initramfs + fetch the Linux kernel for QEMU.
 # Usage: build-image.sh [arch] [variant]
-#   variant: core | net | lab
+#   variant: core | net | lab | study
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -21,10 +21,14 @@ if [[ ! -f "$CFG" ]]; then
     echo "unknown arch: $ARCH" >&2
     exit 2
 fi
-if [[ "$VARIANT" != "core" && "$VARIANT" != "net" && "$VARIANT" != "lab" ]]; then
-    echo "unknown variant: $VARIANT (core|net|lab)" >&2
+if [[ "$VARIANT" != "core" && "$VARIANT" != "net" && "$VARIANT" != "lab" && "$VARIANT" != "study" ]]; then
+    echo "unknown variant: $VARIANT (core|net|lab|study)" >&2
     exit 2
 fi
+is_net=0
+is_labish=0
+[[ "$VARIANT" == "net" || "$VARIANT" == "lab" || "$VARIANT" == "study" ]] && is_net=1
+[[ "$VARIANT" == "lab" || "$VARIANT" == "study" ]] && is_labish=1
 
 echo "== AahaOS ${VERSION} ${VARIANT} image (${ARCH})"
 
@@ -41,13 +45,13 @@ applets=(
     uname dmesg sleep reboot poweroff halt clear cp mv rm ln
     chmod chown grep sed awk head tail wc ps kill tr
     ip ifconfig lsmod insmod rmmod find tar sync
-    mke2fs mkfs.ext2 pidof pgrep
+    mke2fs mkfs.ext2 pidof pgrep sha256sum
 )
-if [[ "$VARIANT" == "net" || "$VARIANT" == "lab" ]]; then
+if [[ "$is_net" -eq 1 ]]; then
     applets+=(udhcpc ping route wget nc)
 fi
-if [[ "$VARIANT" == "lab" ]]; then
-    applets+=(hexdump od strings xxd)
+if [[ "$is_labish" -eq 1 ]]; then
+    applets+=(hexdump od strings xxd traceroute)
 fi
 for a in "${applets[@]}"; do
     ln -sf busybox "$STAGING/bin/$a"
@@ -56,7 +60,7 @@ ln -sf ../bin/busybox "$STAGING/sbin/reboot"
 ln -sf ../bin/busybox "$STAGING/sbin/poweroff"
 ln -sf ../bin/busybox "$STAGING/sbin/halt"
 ln -sf ../bin/busybox "$STAGING/sbin/mke2fs"
-if [[ "$VARIANT" == "net" || "$VARIANT" == "lab" ]]; then
+if [[ "$is_net" -eq 1 ]]; then
     ln -sf ../bin/busybox "$STAGING/sbin/udhcpc"
 fi
 
@@ -64,8 +68,8 @@ cp -a "$ROOT/os/rootfs-overlay/." "$STAGING/"
 if [[ -d "$ROOT/os/variants/${VARIANT}" ]]; then
     cp -a "$ROOT/os/variants/${VARIANT}/." "$STAGING/"
 fi
-# net overlay (udhcpc script) also used by lab
-if [[ "$VARIANT" == "lab" && -d "$ROOT/os/variants/net" ]]; then
+# net overlay (udhcpc script) also used by lab + study
+if [[ "$is_net" -eq 1 && "$VARIANT" != "net" && -d "$ROOT/os/variants/net" ]]; then
     cp -a "$ROOT/os/variants/net/." "$STAGING/"
 fi
 printf '%s\n' "$VERSION" > "$STAGING/etc/aaha/version"
@@ -75,6 +79,7 @@ case "$VARIANT" in
     core) pretty="AahaOS ${VERSION} (Core)"; vpretty=Core ;;
     net) pretty="AahaOS ${VERSION} (Net)"; vpretty=Net ;;
     lab) pretty="AahaOS ${VERSION} (Lab)"; vpretty=Lab ;;
+    study) pretty="AahaOS ${VERSION} (Study)"; vpretty=Study ;;
 esac
 sed -i \
     -e "s/^VERSION=.*/VERSION=\"${VERSION}\"/" \
@@ -96,7 +101,7 @@ mkdir -p "$STAGING/lib/modules/aaha"
 cp -f "$ROOT/build/${ARCH}/virtio-modules/"*.ko "$STAGING/lib/modules/aaha/"
 echo "-- bundled virtio modules (same kernel, GPL-2.0)"
 
-if [[ "$VARIANT" == "net" || "$VARIANT" == "lab" ]]; then
+if [[ "$is_net" -eq 1 ]]; then
     "$ROOT/scripts/fetch-guest-bins.sh" "$ARCH" "$VARIANT"
     if [[ -d "$ROOT/build/${ARCH}/guest-bins/root" ]]; then
         cp -a "$ROOT/build/${ARCH}/guest-bins/root/." "$STAGING/"

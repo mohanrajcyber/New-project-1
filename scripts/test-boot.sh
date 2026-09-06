@@ -35,7 +35,7 @@ extra=()
 if [[ "$ARCH" == "aarch64" ]]; then
     extra+=(-cpu "${QEMU_CPU}")
 fi
-if [[ "$VARIANT" == "net" || "$VARIANT" == "lab" ]]; then
+if [[ "$VARIANT" == "net" || "$VARIANT" == "lab" || "$VARIANT" == "study" ]]; then
     extra+=(-netdev user,id=n0,hostfwd=tcp::2222-:22 -device virtio-net-pci,netdev=n0)
 fi
 
@@ -64,7 +64,7 @@ trap cleanup EXIT
 
 ok=0
 need_net=0
-[[ "$VARIANT" == "net" || "$VARIANT" == "lab" ]] && need_net=1
+[[ "$VARIANT" == "net" || "$VARIANT" == "lab" || "$VARIANT" == "study" ]] && need_net=1
 for _ in $(seq 1 90); do
     if [[ -f "$LOG" ]] \
         && grep -q "AahaOS" "$LOG" \
@@ -112,6 +112,15 @@ if [[ "$VARIANT" == "lab" ]]; then
         echo "PASS: Lab PRETTY_NAME on serial"
     else
         echo "FAIL: Lab image missing distinct PRETTY_NAME" >&2
+        exit 1
+    fi
+fi
+if [[ "$VARIANT" == "study" ]]; then
+    if grep -q 'PRETTY_NAME="AahaOS .* (Study)"' "$LOG" \
+        && grep -q 'authorized use only' "$LOG"; then
+        echo "PASS: Study PRETTY_NAME + ethics on serial"
+    else
+        echo "FAIL: Study image missing PRETTY_NAME or ethics banner" >&2
         exit 1
     fi
 fi

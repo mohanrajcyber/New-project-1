@@ -11,8 +11,8 @@ DISK="${AAHA_DISK:-64}"
 SSH_PORT="${AAHA_SSH_PORT:-2222}"
 SHARE="${AAHA_SHARE:-$HOME/aaha-share}"
 
-if [[ "$VARIANT" != "core" && "$VARIANT" != "net" && "$VARIANT" != "lab" ]]; then
-    echo "AAHA_VARIANT must be core, net, or lab" >&2
+if [[ "$VARIANT" != "core" && "$VARIANT" != "net" && "$VARIANT" != "lab" && "$VARIANT" != "study" ]]; then
+    echo "AAHA_VARIANT must be core, net, lab, or study" >&2
     exit 2
 fi
 
@@ -51,10 +51,9 @@ if [[ "$DISK" =~ ^[0-9]+$ ]] && [[ "$DISK" -gt 0 ]]; then
         dd if=/dev/zero of="$DISKIMG" bs=1M count="$DISK" status=none
         if command -v mkfs.vfat >/dev/null 2>&1; then
             mkfs.vfat -n AAHADATA "$DISKIMG" >/dev/null
-        elif command -v mkfs.ext2 >/dev/null 2>&1; then
-            mkfs.ext2 -F -L aaha-data "$DISKIMG" >/dev/null
+            echo "  formatted vfat (not ext2 — this virt kernel mounts vfat)"
         else
-            echo "  (no mkfs.vfat — guest will format on first mount)"
+            echo "  raw image — guest formats vfat on first mount (install dosfstools to preformat)"
         fi
     fi
     drive=(-drive "file=${DISKIMG},if=virtio,format=raw")
@@ -62,7 +61,7 @@ if [[ "$DISK" =~ ^[0-9]+$ ]] && [[ "$DISK" -gt 0 ]]; then
 fi
 
 net=()
-if [[ "$VARIANT" == "net" || "$VARIANT" == "lab" ]]; then
+if [[ "$VARIANT" == "net" || "$VARIANT" == "lab" || "$VARIANT" == "study" ]]; then
     net=(-netdev "user,id=n0,hostfwd=tcp::${SSH_PORT}-:22" -device virtio-net-pci,netdev=n0)
     echo "  net     virtio-net + QEMU user  ssh -p ${SSH_PORT} root@127.0.0.1"
 else

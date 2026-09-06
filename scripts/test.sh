@@ -33,7 +33,11 @@ echo "== boot x86_64 lab"
 ./scripts/build-image.sh x86_64 lab
 ./scripts/test-boot.sh x86_64 lab
 
-echo "== feature proofs (persist / lock / lab)"
+echo "== boot x86_64 study"
+./scripts/build-image.sh x86_64 study
+./scripts/test-boot.sh x86_64 study
+
+echo "== feature proofs (persist / lock / lab / study)"
 ./scripts/test-features.sh x86_64
 
 echo

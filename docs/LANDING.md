@@ -8,7 +8,8 @@ AahaOS is a custom embedded Linux — our init, our hostname `aaha`, our `aaha` 
 
 **Core** — console guest, local-only (default).  
 **Net** — Core plus `virtio-net` + DHCP + dropbear (`ssh -p 2222`).  
-**Lab** — Net plus extra applets (`aaha lab`). Distinct `PRETTY_NAME`.
+**Lab** — Net plus extra applets (`aaha lab`). Distinct `PRETTY_NAME`.  
+**Study** — authorized classroom lessons (`aaha study`, `aaha lesson` 1–4). Own VM / written permission only. Not Kali.
 
 Live site (demo, not a VM): https://mohanrajcyber.github.io/New-project-1/
 

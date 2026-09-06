@@ -1,8 +1,8 @@
 {
   "os": "AahaOS",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "arch": "aarch64",
-  "variants": ["core", "net", "lab"],
+  "variants": ["core", "net", "lab", "study"],
   "kernel": "vmlinuz",
   "termux": "scripts/termux-boot-aahaos.sh"
 }

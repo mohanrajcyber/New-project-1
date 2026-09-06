@@ -93,7 +93,7 @@ fun HomeScreen(engine: BundledImageEngine, onOpenEngine: () -> Unit) {
                 )
                 Spacer(Modifier.height(10.dp))
                 Row {
-                    listOf("core", "net", "lab").forEach { v ->
+                    listOf("core", "net", "lab", "study").forEach { v ->
                         FilterChip(
                             selected = variant == v,
                             onClick = {

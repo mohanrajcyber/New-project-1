@@ -181,13 +181,13 @@ class BundledImageEngine(private val context: Context) : VmEngine {
                 val json = JSONObject(reader.readText())
                 GuestManifest(
                     os = json.optString("os", "AahaOS"),
-                    version = json.optString("version", "0.3.0"),
+                    version = json.optString("version", "0.5.0"),
                     kind = json.optString("kind", "embedded-linux"),
                     engine = json.optString("engine", "termux-handoff"),
                     variant = json.optString("variant", "core"),
                     imageHint = json.optString(
                         "imageHint",
-                        "dist/aarch64/{core,net}/initramfs.cpio.gz",
+                        "dist/aarch64/{core,net,lab,study}/initramfs.cpio.gz",
                     ),
                 )
             }

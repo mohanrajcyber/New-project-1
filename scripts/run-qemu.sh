@@ -40,7 +40,7 @@ extra=()
 if [[ "$ARCH" == "aarch64" ]]; then
     extra+=(-cpu "${QEMU_CPU}")
 fi
-if [[ "$VARIANT" == "net" || "$VARIANT" == "lab" ]]; then
+if [[ "$VARIANT" == "net" || "$VARIANT" == "lab" || "$VARIANT" == "study" ]]; then
     extra+=(-netdev "user,id=n0,hostfwd=tcp::${SSH_PORT}-:22" -device virtio-net-pci,netdev=n0)
     echo "  net     virtio-net + QEMU user (DHCP)  ssh host :${SSH_PORT} -> guest :22"
 fi
@@ -52,11 +52,8 @@ if [[ "$DISK" =~ ^[0-9]+$ ]] && [[ "$DISK" -gt 0 ]]; then
         if command -v mkfs.vfat >/dev/null 2>&1; then
             mkfs.vfat -n AAHADATA "$DISKIMG" >/dev/null
             echo "  disk    formatted vfat ${DISK}M $DISKIMG -> guest /data"
-        elif command -v mkfs.ext2 >/dev/null 2>&1; then
-            mkfs.ext2 -F -L aaha-data "$DISKIMG" >/dev/null
-            echo "  disk    formatted ext2 ${DISK}M $DISKIMG -> guest /data"
         else
-            echo "  disk    raw ${DISK}M (guest mke2fs on first mount)"
+            echo "  disk    raw ${DISK}M (guest mkfs.vfat on first mount — not ext2)"
         fi
     fi
     extra+=(-drive "file=${DISKIMG},if=virtio,format=raw")

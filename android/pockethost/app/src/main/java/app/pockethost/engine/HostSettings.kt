@@ -18,7 +18,7 @@ class HostSettings(context: Context) {
         get() = prefs.getString(KEY_VARIANT, "core") ?: "core"
         set(value) {
             val v = when (value) {
-                "net", "lab" -> value
+                "net", "lab", "study" -> value
                 else -> "core"
             }
             prefs.edit().putString(KEY_VARIANT, v).apply()

@@ -1,11 +1,17 @@
-# Phone boot (Termux) — AahaOS 0.4
+# Phone boot (Termux) — AahaOS 0.5
 
 Boots **our** aarch64 image. Repo is public.
+
+If an older persist image was formatted **ext2**, delete it so the guest can make **vfat** (this virt kernel mounts vfat, not ext2):
+
+```bash
+rm -f ~/aahaos/persist-*.img
+```
 
 ```bash
 pkg update
 pkg install qemu-system-aarch64-headless wget
-# optional persist format on the phone:
+# optional host-side vfat format:
 pkg install dosfstools
 curl -fsSL -o ~/termux-boot-aahaos.sh \
   https://raw.githubusercontent.com/mohanrajcyber/New-project-1/main/scripts/termux-boot-aahaos.sh
@@ -27,11 +33,20 @@ ssh -p 2222 -o StrictHostKeyChecking=no root@127.0.0.1
 # blank password
 ```
 
-**Lab** (Net + extra applets, `PRETTY_NAME` Lab):
+**Lab** (Net + extra applets):
 
 ```bash
 AAHA_VARIANT=lab AAHA_MEM=512 AAHA_DISK=64 bash ~/termux-boot-aahaos.sh
 ```
+
+**Study** (authorized classroom lessons — own VM / written permission only):
+
+```bash
+AAHA_VARIANT=study AAHA_MEM=512 AAHA_DISK=64 bash ~/termux-boot-aahaos.sh
+```
+
+Inside Study: `aaha study` then `aaha lesson 1` … `aaha lesson 4`.
+Not Kali. No exploit kits. Lessons hash your own file and watch **loopback**.
 
 **Share on LAN** (second phone, same Wi-Fi):
 
@@ -40,7 +55,7 @@ curl -fsSL -o ~/share-aahaos.sh \
   https://raw.githubusercontent.com/mohanrajcyber/New-project-1/main/scripts/share-aahaos.sh
 bash ~/share-aahaos.sh
 # on the other phone:
-AAHA_RAW=http://PHONE_IP:8766 AAHA_VARIANT=core bash ~/termux-boot-aahaos.sh
+AAHA_RAW=http://PHONE_IP:8766 AAHA_VARIANT=study bash ~/termux-boot-aahaos.sh
 ```
 
 **Serial log** (optional, for PocketHost paste):

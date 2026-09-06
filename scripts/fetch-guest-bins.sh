@@ -37,7 +37,8 @@ ssl=$(pick 'openssl-3\.[0-9.]+-r[0-9]+\.apk')
 z=$(pick 'zlib-1\.[0-9.]+-r[0-9]+\.apk')
 ut=$(pick 'utmps-libs-[0-9][^"<]*\.apk')
 ska=$(pick 'skalibs-libs-[0-9][^"<]*\.apk')
-echo "pkgs musl=$musl dropbear=$drop openssl=$ssl zlib=$z utmps=$ut skalibs=$ska"
+dos=$(pick 'dosfstools-[0-9][^"<]*\.apk')
+echo "pkgs musl=$musl dropbear=$drop openssl=$ssl zlib=$z utmps=$ut skalibs=$ska dosfstools=$dos"
 apk_get "$musl"
 apk_get "$drop"
 apk_get "$crypto"
@@ -46,7 +47,8 @@ apk_get "$ssl"
 apk_get "$z"
 apk_get "$ut"
 apk_get "$ska"
-if [[ "$WANT_LAB" == "lab" ]]; then
+apk_get "$dos"
+if [[ "$WANT_LAB" == "lab" || "$WANT_LAB" == "study" ]]; then
     st=$(pick 'strace-6\.[0-9.]+-r[0-9]+\.apk')
     td=$(pick 'tcpdump-[0-9][^"<]*\.apk')
     pc=$(pick 'libpcap-[0-9][^"<]*\.apk')

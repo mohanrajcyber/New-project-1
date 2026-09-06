@@ -1,7 +1,7 @@
-PocketHost ↔ AahaOS image contract (v0.4)
+PocketHost ↔ AahaOS image contract (v0.5)
 ========================================
 
-Guest: AahaOS (custom embedded Linux). Not an ISO wizard.
+Guest: AahaOS (custom embedded Linux). Not an ISO wizard. Not Kali.
 
 Published phone images (public repo):
 
@@ -9,26 +9,19 @@ Published phone images (public repo):
   dist/aarch64/core/initramfs.cpio.gz
   dist/aarch64/net/initramfs.cpio.gz
   dist/aarch64/lab/initramfs.cpio.gz
+  dist/aarch64/study/initramfs.cpio.gz
 
-On-device paths after Termux wget (or a future host copy):
+Variants (ours only): core | net | lab | study
+  core  = console guest, local-only
+  net   = virtio-net + udhcpc + dropbear
+  lab   = net + extra applets (hexdump/od/strace/tcpdump)
+  study = lab + aaha study / aaha lesson 1-4 (authorized classroom use)
 
-  files/aahaos/manifest.json
-  files/aahaos/aarch64/vmlinuz
-  files/aahaos/aarch64/initramfs.cpio.gz
+Persist: AAHA_DISK is virtio-blk mounted at /data as vfat (not ext2).
+This virt kernel's netboot modules have fat/vfat, not ext2/ext4.
 
-Variants (ours only): core | net | lab
-  core = console guest, local-only (no virtio-net)
-  net  = core + virtio-net + udhcpc + dropbear (QEMU user DHCP, hostfwd 2222→22)
-  lab  = net + extra applets (hexdump/od/strace/tcpdump if present)
+Study tools are for systems you own or have written permission to test.
+No exploit kits. No attack payloads. Not a Kali clone.
 
-Persist: AAHA_DISK image is attached as virtio-blk and mounted at /data (vfat).
-Share: QEMU virtio-9p tag `aaha` → guest /share when 9p.ko is available.
-
-VmEngine reports Ready when this contract / bundled manifest is present.
 Ready does NOT mean QEMU is executing inside the APK.
-Start hands off to Termux. Status may be Handed off — never Running unless
-this process owns QEMU (it does not in v0.4). Serial tab is labeled
-"Serial (via Termux)" and is not a live guest.
-
 Phone boot: docs/TERMUX.md
-Build:  make image / make image-aarch64 / make publish-dist

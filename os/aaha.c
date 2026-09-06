@@ -27,6 +27,8 @@ static void usage(void)
           "  unlock   remount / read-write\n"
           "  unlock persist   decrypt /data vault\n"
           "  lab      Lab tools menu\n"
+          "  study    Study menu (authorized classroom tools)\n"
+          "  lesson   1-4  Study lesson against this guest\n"
           "  help     this text\n",
           stdout);
 }
@@ -112,7 +114,7 @@ static void cmd_ident(void)
     struct utsname uts;
     char host[64] = "?";
     char variant[32] = "core";
-    char version[32] = "0.4.0";
+    char version[32] = "0.5.0";
 
     gethostname(host, sizeof(host));
     read_trim("/etc/aaha/variant", variant, sizeof(variant), "core");
@@ -121,8 +123,7 @@ static void cmd_ident(void)
     fputs("AahaOS identity\n", stdout);
     fputs("---------------\n", stdout);
     printf("product   : AahaOS %s\n", version);
-    printf("variant   : %s  (Core = local, Net = DHCP+ssh, Lab = Net + extra applets)\n",
-           variant);
+    printf("variant   : %s  (Core / Net / Lab / Study)\n", variant);
     printf("hostname  : %s\n", host);
     print_os_keys();
     if (uname(&uts) == 0) {
@@ -202,7 +203,8 @@ static void cmd_net(void)
         fputs("no /proc/net/dev — proc not mounted?\n", stdout);
     }
 
-    if (strcmp(variant, "net") == 0 || strcmp(variant, "lab") == 0) {
+    if (strcmp(variant, "net") == 0 || strcmp(variant, "lab") == 0 ||
+        strcmp(variant, "study") == 0) {
         fputs("\nIPv4 routes (/proc/net/route):\n", stdout);
         fp = fopen("/proc/net/route", "r");
         if (fp) {
@@ -213,7 +215,7 @@ static void cmd_net(void)
         } else {
             fputs("(no /proc/net/route)\n", stdout);
         }
-        fputs("\nSSH (Net/Lab): dropbear :22 — from host  ssh -p 2222 root@127.0.0.1\n",
+        fputs("\nSSH (Net/Lab/Study): dropbear :22 — from host  ssh -p 2222 root@127.0.0.1\n",
               stdout);
         fputs("No port scan, no exploit tools.\n", stdout);
     } else {
@@ -320,7 +322,8 @@ int main(int argc, char **argv)
         cmd_unlock();
         return 0;
     }
-    if (strcmp(cmd, "lab") == 0) {
+    if (strcmp(cmd, "lab") == 0 || strcmp(cmd, "study") == 0 ||
+        strcmp(cmd, "lesson") == 0) {
         handoff_sh(argc, argv);
         return 1;
     }

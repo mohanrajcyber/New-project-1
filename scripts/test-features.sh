@@ -9,6 +9,7 @@ source <(sed -n 's/^[[:space:]]*\([A-Z0-9_]*\) := \(.*\)$/\1="\2"/p' "$CFG")
 
 boot_hook() {
     local variant="$1" hook="$2" needle="$3"
+    local fmt="${4:-keep}"
     local img
     if [[ "$variant" == "core" ]]; then
         img="$ROOT/images/${ARCH}"
@@ -24,16 +25,21 @@ boot_hook() {
     rm -f "$log" "$pid"
     extra=()
     [[ "$ARCH" == "aarch64" ]] && extra+=(-cpu "${QEMU_CPU}")
-    if [[ "$variant" == "net" || "$variant" == "lab" ]]; then
+    if [[ "$variant" == "net" || "$variant" == "lab" || "$variant" == "study" ]]; then
         extra+=(-netdev user,id=n0,hostfwd=tcp::$((2222))-:22 -device virtio-net-pci,netdev=n0)
     fi
     local diskimg="$build/persist.img"
-    if [[ ! -f "$diskimg" ]]; then
+    if [[ "$fmt" == "raw" ]]; then
+        rm -f "$diskimg"
+        dd if=/dev/zero of="$diskimg" bs=1M count=32 status=none
+    elif [[ "$fmt" == "ext2" ]]; then
+        rm -f "$diskimg"
+        dd if=/dev/zero of="$diskimg" bs=1M count=32 status=none
+        mkfs.ext2 -F -L aaha-data "$diskimg" >/dev/null
+    elif [[ ! -f "$diskimg" ]]; then
         dd if=/dev/zero of="$diskimg" bs=1M count=32 status=none
         if command -v mkfs.vfat >/dev/null 2>&1; then
             mkfs.vfat -n AAHADATA "$diskimg" >/dev/null
-        else
-            mkfs.ext2 -F -L aaha-data "$diskimg" >/dev/null
         fi
     fi
     extra+=(-drive "file=${diskimg},if=virtio,format=raw")
@@ -77,6 +83,7 @@ boot_hook() {
 
 "$ROOT/scripts/build-image.sh" "$ARCH" core
 "$ROOT/scripts/build-image.sh" "$ARCH" lab
+"$ROOT/scripts/build-image.sh" "$ARCH" study
 
 # persist survive: write then read on a second boot, same img
 rm -f "$ROOT/build/${ARCH}-core-feat/persist.img"
@@ -84,10 +91,20 @@ boot_hook core persist-write AAHA_PERSIST_WRITE_OK
 # keep the same persist.img for read
 boot_hook core persist-read AAHA_PERSIST_READ_OK
 
+# Termux-like: raw disk (no host mkfs) — guest must format vfat
+rm -f "$ROOT/build/${ARCH}-core-feat/persist.img"
+boot_hook core persist-write AAHA_PERSIST_WRITE_OK raw
+boot_hook core persist-read AAHA_PERSIST_READ_OK
+
+# Phone bug path: host formatted ext2; guest must remake vfat and mount
+rm -f "$ROOT/build/${ARCH}-core-feat/persist.img"
+boot_hook core persist-write AAHA_PERSIST_WRITE_OK ext2
+
 boot_hook core lock AAHA_LOCK_OK
 rm -f "$ROOT/build/${ARCH}-core-feat/persist.img"
 boot_hook core persist-crypt AAHA_CRYPT_OK
 boot_hook lab lab AAHA_LAB_OK
+boot_hook study study AAHA_STUDY_OK
 if boot_hook lab ssh AAHA_SSH_OK; then
     echo "PASS: dropbear process in guest"
 else

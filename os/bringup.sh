@@ -37,19 +37,54 @@ mount_persist() {
             insmod "/lib/modules/aaha/${m}.ko" 2>/dev/null || true
         done
     fi
-    mounted=0
-    mount -t vfat -o iocharset=iso8859-1,codepage=437 "$DEV" /data 2>/dev/null && mounted=1
-    [ "$mounted" -eq 0 ] && mount -t vfat "$DEV" /data 2>/dev/null && mounted=1
-    [ "$mounted" -eq 0 ] && mount -t ext2 "$DEV" /data 2>/dev/null && mounted=1
-    if [ "$mounted" -eq 0 ]; then
-        if command -v mkfs.vfat >/dev/null 2>&1; then
-            echo "AahaOS persist: formatting $DEV vfat"
-            mkfs.vfat -n AAHADATA "$DEV" >/dev/null 2>&1 || true
-        elif [ -x /sbin/mke2fs ] || [ -x /bin/mke2fs ]; then
-            echo "AahaOS persist: formatting $DEV ext2"
-            mke2fs -F -L aaha-data "$DEV" >/dev/null 2>&1 || true
+    have_vfat=0
+    have_ext2=0
+    grep -q vfat /proc/filesystems 2>/dev/null && have_vfat=1
+    grep -q '	fat$' /proc/filesystems 2>/dev/null && have_vfat=1
+    grep -q ext2 /proc/filesystems 2>/dev/null && have_ext2=1
+
+    try_vfat() {
+        mount -t vfat -o iocharset=iso8859-1,codepage=437 "$DEV" /data 2>/dev/null && return 0
+        mount -t vfat "$DEV" /data 2>/dev/null && return 0
+        return 1
+    }
+
+    # This virt kernel's netboot modules include fat/vfat, not ext2/ext4.
+    # Never format ext2 unless the guest can actually mount it.
+    if try_vfat; then
+        echo "AahaOS persist: $DEV mounted on /data (vfat)"
+        mkdir -p /data/lost+found 2>/dev/null || true
+        return 0
+    fi
+    if [ "$have_ext2" -eq 1 ]; then
+        mount -t ext2 "$DEV" /data 2>/dev/null && {
+            echo "AahaOS persist: $DEV mounted on /data (ext2)"
+            return 0
+        }
+    fi
+
+    MKFAT=""
+    for c in mkfs.vfat mkfs.fat /sbin/mkfs.vfat /sbin/mkfs.fat /usr/sbin/mkfs.vfat; do
+        if command -v "$c" >/dev/null 2>&1 || [ -x "$c" ]; then
+            MKFAT=$(command -v "$c" 2>/dev/null || echo "$c")
+            break
         fi
-        mount -t vfat "$DEV" /data 2>/dev/null || mount -t ext2 "$DEV" /data 2>/dev/null || true
+    done
+    if [ -n "$MKFAT" ]; then
+        echo "AahaOS persist: formatting $DEV vfat (virt kernel: vfat first, not ext2)"
+        "$MKFAT" -n AAHADATA "$DEV" >/dev/null 2>&1 || "$MKFAT" "$DEV" >/dev/null 2>&1 || true
+        if try_vfat; then
+            echo "AahaOS persist: $DEV mounted on /data (vfat)"
+            mkdir -p /data/lost+found 2>/dev/null || true
+            return 0
+        fi
+    fi
+    if [ "$have_ext2" -eq 1 ] && { [ -x /sbin/mke2fs ] || [ -x /bin/mke2fs ] || command -v mke2fs >/dev/null 2>&1; }; then
+        echo "AahaOS persist: formatting $DEV ext2 (vfat mkfs missing; ext2 is available)"
+        mke2fs -F -L aaha-data "$DEV" >/dev/null 2>&1 || true
+        mount -t ext2 "$DEV" /data 2>/dev/null || true
+    else
+        echo "AahaOS persist: not formatting ext2 (no ext2.ko in this virt kernel)"
     fi
     if grep -q ' /data ' /proc/mounts 2>/dev/null; then
         echo "AahaOS persist: $DEV mounted on /data"
@@ -205,6 +240,14 @@ run_tests() {
             sleep 2
             poweroff -f 2>/dev/null || reboot -f
             ;;
+        study)
+            cat /etc/os-release
+            /usr/bin/aaha study
+            /usr/bin/aaha lesson 1
+            echo "AAHA_STUDY_OK"
+            sleep 1
+            poweroff -f 2>/dev/null || reboot -f
+            ;;
     esac
 }
 
@@ -215,7 +258,15 @@ load_mods
 mount_persist || true
 mount_share || true
 
-if [ "$VARIANT" = "net" ] || [ "$VARIANT" = "lab" ]; then
+echo
+if [ -f /etc/aaha/ethics ]; then
+    cat /etc/aaha/ethics
+else
+    echo "AahaOS: authorized use only. Own systems / written permission only."
+fi
+echo
+
+if [ "$VARIANT" = "net" ] || [ "$VARIANT" = "lab" ] || [ "$VARIANT" = "study" ]; then
     bringup_net
     start_dropbear || true
 fi

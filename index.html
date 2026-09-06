@@ -190,7 +190,7 @@
 
   <section class="card" id="guest">
     <div class="os-name">AahaOS</div>
-    <div class="meta">Embedded Linux · 0.4.0 · <span id="variantMeta">core</span></div>
+    <div class="meta">Embedded Linux · 0.5.0 · <span id="variantMeta">core</span></div>
     <div class="pill-row">
       <span class="dot">●</span>
       <span class="ready" id="statusLabel">Ready</span>
@@ -242,6 +242,7 @@
       <button class="chip on" type="button" data-variant="core">Core (local)</button>
       <button class="chip" type="button" data-variant="net">Net (DHCP+ssh)</button>
       <button class="chip" type="button" data-variant="lab">Lab</button>
+      <button class="chip" type="button" data-variant="study">Study</button>
     </div>
     <p class="honest" style="margin-top:10px">RAM chips (also change the Termux command):</p>
     <div class="chips" id="ramChips">
@@ -259,6 +260,7 @@
       SSH (Net/Lab): <code>ssh -p 2222 root@127.0.0.1</code> (blank password).
       Share: <code>scripts/share-aahaos.sh</code> then set <code>AAHA_RAW=http://IP:8766</code>.
       Lock: in-guest <code>aaha lock</code> remounts / ro; <code>aaha lock persist</code> openssl-tars /data.
+      Study: <code>aaha study</code> and <code>aaha lesson</code> 1–4 on this guest only (authorized / own-VM). Not Kali.
     </p>
     <div class="mono" id="sshCmd">ssh -p 2222 -o StrictHostKeyChecking=no root@127.0.0.1</div>
     <button class="act" id="copySsh" type="button">Copy ssh command</button>
@@ -290,6 +292,7 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
       <button class="chip" type="button" data-cmd="aaha net">aaha net</button>
     <button class="chip" type="button" data-cmd="aaha lock">aaha lock</button>
       <button class="chip" type="button" data-cmd="aaha lab">aaha lab</button>
+      <button class="chip" type="button" data-cmd="aaha study">aaha study</button>
       <button class="chip" type="button" data-cmd="clear">clear</button>
     </div>
     <form class="input-row" id="cmdForm" hidden>
@@ -313,7 +316,7 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
     disk: parseInt(store.getItem("aaha_disk") || "64", 10),
     variant: (function () {
       var v = store.getItem("aaha_variant") || "core";
-      return (v === "net" || v === "lab") ? v : "core";
+      return (v === "net" || v === "lab" || v === "study") ? v : "core";
     })(),
     lan: store.getItem("aaha_lan") || "",
     snaps: JSON.parse(store.getItem("aaha_snaps") || "[]"),
@@ -441,7 +444,7 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
 
   function banner() {
     const v = state.variant;
-    const pretty = v === "lab" ? "Lab" : (v === "net" ? "Net" : "Core");
+    const pretty = v === "study" ? "Study" : (v === "lab" ? "Lab" : (v === "net" ? "Net" : "Core"));
     return [
       "Run /sbin/init as init process",
       "",
@@ -456,7 +459,7 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
       "  |  ஆஹா! நம்ம OS                             |",
       "  +------------------------------------------+",
       "",
-      "  AahaOS 0.4.0  —  custom embedded Linux guest",
+      "  AahaOS 0.5.0  —  custom embedded Linux guest",
       "  hostname : aaha",
       "  variant  : " + v,
       "  kernel   : Linux 6.12.81-0-virt",
@@ -467,15 +470,16 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
       "  Welcome to AahaOS — our guest, not a downloaded ISO.",
       "  ஆஹா! இது நம்ம OS. ரெடி.",
       "",
-      (v === "net" || v === "lab") ? "AahaOS Net: bringing up eth0 (DHCP via udhcpc)\n" : "",
+      (v === "net" || v === "lab" || v === "study") ? "AahaOS Net: bringing up eth0 (DHCP via udhcpc)\n" : "",
+      v === "study" ? "AahaOS — authorized use only. Own-VM / written permission only.\n" : "",
       "AahaOS identity",
       "---------------",
-      "product   : AahaOS 0.4.0",
-      "variant   : " + v + "  (Core = local, Net = DHCP+ssh, Lab = extra applets)",
+      "product   : AahaOS 0.5.0",
+      "variant   : " + v + "  (Core / Net / Lab / Study)",
       "hostname  : aaha",
       "ID=aahaos",
-      "VERSION_ID=0.4.0",
-      "PRETTY_NAME=\"AahaOS 0.4.0 (" + pretty + ")\"",
+      "VERSION_ID=0.5.0",
+      "PRETTY_NAME=\"AahaOS 0.5.0 (" + pretty + ")\"",
       "VARIANT=\"" + pretty + "\"",
       "prompt    : aaha@aaha",
       "services  : dropbear on Net/Lab only; no getty login",
@@ -485,13 +489,14 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
   }
 
   function prettyName() {
+    if (state.variant === "study") return "Study";
     if (state.variant === "lab") return "Lab";
     if (state.variant === "net") return "Net";
     return "Core";
   }
 
   function netOut() {
-    if (state.variant === "net" || state.variant === "lab") {
+    if (state.variant === "net" || state.variant === "lab" || state.variant === "study") {
       return [
         "AahaOS net (local view)",
         "-----------------------",
@@ -547,8 +552,8 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
         "-------------",
         "os        : AahaOS (custom embedded Linux)",
         "not       : hypervisor clone, Windows, distro installer, from-scratch kernel",
-        "PRETTY_NAME=\"AahaOS 0.4.0 (" + prettyName() + ")\"",
-        "VERSION_ID=0.4.0",
+        "PRETTY_NAME=\"AahaOS 0.5.0 (" + prettyName() + ")\"",
+        "VERSION_ID=0.5.0",
         "ID=aahaos",
         "VARIANT=\"" + prettyName() + "\"",
         "variant   : " + state.variant,
@@ -560,11 +565,11 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
       "aaha ident": [
         "AahaOS identity",
         "---------------",
-        "product   : AahaOS 0.4.0",
-        "variant   : " + state.variant + "  (Core = local, Net = DHCP+ssh, Lab = extra applets)",
+        "product   : AahaOS 0.5.0",
+        "variant   : " + state.variant + "  (Core / Net / Lab / Study)",
         "hostname  : aaha",
-        "PRETTY_NAME=\"AahaOS 0.4.0 (" + prettyName() + ")\"",
-        "VERSION_ID=0.4.0",
+        "PRETTY_NAME=\"AahaOS 0.5.0 (" + prettyName() + ")\"",
+        "VERSION_ID=0.5.0",
         "ID=aahaos",
         "prompt    : aaha@aaha",
         "services  : dropbear on Net/Lab only; no getty login",
@@ -589,13 +594,23 @@ This is a faithful simulator of the real CLI — not QEMU in the browser.</div>
       "aaha lab": [
         "AahaOS Lab",
         "----------",
-        "PRETTY_NAME=\"AahaOS 0.4.0 (Lab)\"",
+        "PRETTY_NAME=\"AahaOS 0.5.0 (Lab)\"",
         "variant    : lab",
         "",
         "Extra applets (WEB DEMO list, not a live guest):",
         "  hexdump  yes",
         "  od  yes",
         "  Not a scanner. Not malware.",
+      ].join("\n"),
+      "aaha study": [
+        "AahaOS Study",
+        "------------",
+        "WEB DEMO — not a live guest.",
+        "AahaOS — authorized use only",
+        "Classroom / own-VM learning. Inspect only systems you own",
+        "or have written permission to test.",
+        "PRETTY_NAME=\"AahaOS 0.5.0 (Study)\"",
+        "Lessons: aaha lesson 1-4 against this guest. Not Kali.",
       ].join("\n"),
     };
   }

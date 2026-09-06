@@ -99,7 +99,7 @@ fun SettingsScreen(engine: BundledImageEngine) {
             Spacer(Modifier.height(12.dp))
             Text("Guest variant → AAHA_VARIANT", color = Paper, fontSize = 16.sp)
             Row {
-                listOf("core", "net", "lab").forEach { v ->
+                listOf("core", "net", "lab", "study").forEach { v ->
                     FilterChip(
                         selected = variant == v,
                         onClick = {
@@ -112,7 +112,7 @@ fun SettingsScreen(engine: BundledImageEngine) {
                 }
             }
             Text(
-                "Core local · Net DHCP+ssh · Lab extra applets. Persist /data is mounted when AAHA_DISK > 0.",
+                "Core local · Net DHCP+ssh · Lab applets · Study classroom lessons. Persist /data is vfat when AAHA_DISK > 0.",
                 color = Mute,
                 fontSize = 13.sp,
             )
@@ -123,7 +123,7 @@ fun SettingsScreen(engine: BundledImageEngine) {
         PhCard {
             Text("About", color = Paper, fontSize = 16.sp)
             Spacer(Modifier.height(8.dp))
-            Text("PocketHost 0.4  ·  guest ${manifest?.os ?: "AahaOS"} ${manifest?.version ?: ""}", color = Mute, fontSize = 13.sp)
+            Text("PocketHost 0.5  ·  guest ${manifest?.os ?: "AahaOS"} ${manifest?.version ?: ""}", color = Mute, fontSize = 13.sp)
             Text("Not a hypervisor brand. Not Windows. MIT userspace + Linux kernel.", color = Mute, fontSize = 13.sp)
         }
     }

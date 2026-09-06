@@ -8,7 +8,7 @@ One-tap boot of **our** guest OS. Not a Limbo / Vectras / Andronix wrapper. Not 
 
 Live site (GitHub Pages, **web demo only**): https://mohanrajcyber.github.io/New-project-1/
 
-v0.4: persist `/data`, Net/Lab dropbear `:2222`, Lab variant, Termux/LAN share, real `aaha lock`. Web is still a demo.
+v0.5: Study variant (`aaha study` / `aaha lesson` 1–4, authorized classroom use), persist vfat fix for Termux, Lab/Net/Core as before. Web is still a demo. Not Kali.
 
 Phone boot (real guest): [docs/TERMUX.md](docs/TERMUX.md) · APK: [docs/APK.md](docs/APK.md)
 
@@ -16,7 +16,7 @@ Phone boot (real guest): [docs/TERMUX.md](docs/TERMUX.md) · APK: [docs/APK.md](
 
 - Our branding, `/sbin/init`, `/etc/os-release` (`NAME=AahaOS`), prompt, tools.
 - Real **x86_64** and **aarch64** images that boot in QEMU (serial).
-- Three of **our** variants: **Core** (local-only), **Net** (`virtio-net` + DHCP + dropbear), **Lab** (Net + extra applets).
+- Four of **our** variants: **Core**, **Net**, **Lab**, **Study** (authorized classroom lessons on this guest).
 - Persist disk at guest `/data` (vfat). Files survive reboot when `AAHA_DISK` is set.
 - Published phone images: `dist/aarch64/` (committed; Termux wget from the public repo).
 - PocketHost: Ready → Start hands off to Termux. Snaps create a local row. RAM/disk/variant persist into the QEMU command (`AAHA_VARIANT`, `AAHA_MEM`).
@@ -65,13 +65,15 @@ bash ~/termux-boot-aahaos.sh
 AAHA_VARIANT=net AAHA_MEM=512 AAHA_DISK=64 bash ~/termux-boot-aahaos.sh
 # Lab:
 AAHA_VARIANT=lab AAHA_MEM=512 AAHA_DISK=64 bash ~/termux-boot-aahaos.sh
+# Study (authorized / own-VM only):
+AAHA_VARIANT=study AAHA_MEM=512 AAHA_DISK=64 bash ~/termux-boot-aahaos.sh
 ```
 
 ## PocketHost (Android)
 
 Folder: `android/pockethost` · package `app.pockethost` · minSdk 26
 
-Tabs: **AahaOS** · **Snaps** · **Serial (via Termux)** · **Engine** · **More** (Core/Net/Lab + 256/512/1024 → `AAHA_VARIANT` / `AAHA_MEM`).
+Tabs: **AahaOS** · **Snaps** · **Serial (via Termux)** · **Engine** · **More** (Core/Net/Lab/Study + 256/512/1024 → `AAHA_VARIANT` / `AAHA_MEM`).
 
 ```bash
 cd android/pockethost && ./gradlew :app:assembleRelease

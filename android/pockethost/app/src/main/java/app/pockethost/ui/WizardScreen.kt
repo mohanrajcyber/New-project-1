@@ -47,7 +47,8 @@ fun FirstRunWizard(engine: BundledImageEngine, onDone: () -> Unit) {
             Column {
                 Text(
                     "ஆஹா! நம்ம OS. PocketHost is the host UI — not a hypervisor. " +
-                        "Real boot is Termux + our aarch64 image.",
+                        "Real boot is Termux + our aarch64 image. " +
+                        "Study lessons: authorized / own-VM only.",
                     color = Mute,
                     fontSize = 13.sp,
                 )
