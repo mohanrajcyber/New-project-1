@@ -1,0 +1,20 @@
+PocketHost ↔ AahaOS image contract (v0.2)
+========================================
+
+Guest: AahaOS (custom embedded Linux). Not an ISO wizard.
+
+On-device paths after the host copies a built image:
+
+  files/aahaos/manifest.json
+  files/aahaos/<arch>/vmlinuz
+  files/aahaos/<arch>/initramfs.cpio.gz
+
+<arch> is x86_64 (PC QEMU) or aarch64 (phones).
+Variants (ours only): core | net
+  core = console guest
+  net  = core + busybox DHCP/ping applets
+
+VmEngine reports Ready when this contract / bundled manifest is present.
+Ready does NOT mean QEMU is executing.
+
+Build:  make image   or   make image-aarch64   or   make image-net

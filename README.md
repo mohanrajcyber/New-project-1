@@ -1,47 +1,82 @@
-# EasyCS — Auxilium College BSc Computer Science Helper
+# AahaOS + PocketHost
 
-A **single-file** app for Auxilium College B.Sc. Computer Science students.
-Open `index.html` in a browser. No install, no backend.
+One-tap boot of **our** guest OS. Not a Limbo / Vectras / Andronix wrapper. Not an ISO wizard.
 
-**Both layouts are included:**
-- **Phone** — full-screen app on a mobile (bottom tabs). On a laptop you can also preview the phone frame.
-- **Windows** — full window layout with a left sidebar, wide cards, and more space.
+**AahaOS** — custom embedded Linux: our init, hostname `aaha`, MOTD, `aaha` CLI, our initramfs.
 
-On a computer, use the **Phone / Windows** buttons at the top-right to switch. Phones always use the phone layout.
+**PocketHost** — Android host UI. Not a hypervisor brand.
 
-## What is inside
-- **Learning path** — Year 1 → Year 3, topic notes in simple English, short quiz per C and DS topic
-- **Progress** — sign in with a name only; saved in this browser (`localStorage`)
-- **Interview prep** — technical + HR answers and tips
-- **LinkedIn guide** — 8 steps to build a profile
-- **Job guide** — company types and how freshers apply
+Web (phone browser): [web/index.html](web/index.html) · short landing: [docs/LANDING.md](docs/LANDING.md)
 
-Full sample notes: **Programming in C** (Sem 1) and **Data Structures** (Sem 2).
-Other core papers have shorter plain-language notes so the path is not empty.
+## What this is
 
-## How to run
-Open `index.html` on your phone (Files app / Chrome) or on a computer.
+- Our branding, `/sbin/init`, `/etc/os-release` (`NAME=AahaOS`), prompt, tools.
+- Real **x86_64** and **aarch64** images that boot in QEMU (serial).
+- Two of **our** variants (both build): **Core** (console) and **Net** (Core + DHCP/ping applets).
+- PocketHost: AahaOS card → **Ready · engine off** → **Start**. Engine tab = Termux sheet. No browse-ISO.
 
-To share a link, use **GitHub Pages**:
-1. Push this repo
-2. Settings → Pages → Branch `main` → folder `/ (root)` → Save
-3. Share `https://<username>.github.io/<repo-name>/`
+## What this is not
 
-## File
-Everything is in one file on purpose (CSS + data + app logic):
+- Not a from-scratch production kernel. The kernel is Linux (GPL-2.0). We write userspace + image.
+- Not a hypervisor clone, not Windows, not a pirated ISO shop.
+- Not “download Alpine/Debian yourself and install it.”
+- PocketHost does **not** claim the VM is running. JNI/QEMU-on-phone is next.
 
-```
-index.html    ← the whole EasyCS app
-README.md
+## Proof on a Linux PC
+
+Needs: `qemu-system-x86`, `qemu-system-aarch64`, `busybox-static`, `gcc`, `cpio`, `gzip`, `curl`.
+
+```bash
+make test       # x86_64 Core + aarch64 Core + x86_64 Net (banner grep)
+make run        # interactive serial (Ctrl-A x)
 ```
 
-There is no `css/` or `js/` folder. Edit `index.html` to add more topics.
+Inside the guest:
 
-## Add more notes
-Search for `const SUBJECTS` inside `index.html`. Each topic needs:
+```text
+aaha status
+aaha ident
+aaha mem
+aaha net
+aaha lock
+aaha help
+```
 
-- `id`, `title`, `summary`
-- `explain` (array of simple sentences)
-- `keyPoints` (quick revision lines)
+No password. No sshd. Console only. Ephemeral initramfs.
 
-Optional: add the same `id` under `const QUIZZES` with `{ q, a, c }` questions (`c` is the correct index, starting at 0).
+```bash
+make image-aarch64
+make image-net
+```
+
+## PocketHost (Android)
+
+Folder: `android/pockethost` · package `app.pockethost` · minSdk 26
+
+Tabs: **AahaOS** · **Snaps** (empty, honest) · **Engine** (Termux commands + copy) · **More** (RAM/disk defaults).
+
+Image contract: `android/pockethost/app/src/main/assets/aahaos/`
+
+Gradle wrapper is valid. This environment has no Android SDK, so `assembleDebug` stops at “SDK location not found”. With Android Studio:
+
+```bash
+cd android/pockethost && ./gradlew :app:assembleDebug
+```
+
+## Phone-only tester
+
+See [docs/PHONE.md](docs/PHONE.md). Sideload APK → Ready + engine off. Start stays honest. Next: Termux QEMU on our aarch64 image, or JNI.
+
+## Tree
+
+```text
+os/                 AahaOS userspace + Core/Net overlays
+scripts/            fetch kernel, build, run, test
+android/pockethost  one-tap host UI
+web/index.html      phone-open static page + console demo
+docs/LANDING.md     short mobile read
+```
+
+LICENSE: MIT for our userspace and PocketHost. Linux kernel binary fetched at build time is GPL-2.0.
+
+Demo login: **none**.

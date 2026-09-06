@@ -1,0 +1,17 @@
+# AahaOS login profile (console shell)
+export PATH=/sbin:/usr/sbin:/bin:/usr/bin
+export HOME="${HOME:-/root}"
+export USER="${USER:-aaha}"
+export LOGNAME="${LOGNAME:-aaha}"
+export TERM="${TERM:-linux}"
+export AAHAOS=1
+export PS1='aaha@aaha:\w# '
+
+alias ll='ls -l'
+alias ..='cd ..'
+
+# Tiny hint once per shell.
+if [ -z "$AAHA_HINT" ]; then
+    export AAHA_HINT=1
+    echo "AahaOS shell. Try:  aaha status"
+fi
