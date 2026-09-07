@@ -1,0 +1,15 @@
+{
+  "name": "AahaOS + PocketHost",
+  "user": "ubuntu",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "install": "./scripts/build-image.sh x86_64 core && ./scripts/build-image.sh aarch64 core",
+  "terminals": [
+    {
+      "name": "web-demo",
+      "command": "python3 -m http.server 8765 --bind 0.0.0.0 --directory web"
+    }
+  ],
+  "ports": [8765]
+}
